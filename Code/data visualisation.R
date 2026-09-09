@@ -6,8 +6,8 @@ head(data_Chemical) # Showing data
 # removing the 1st 2 (number, place name) and the last column as well as the 1st row (unit)
 data_Chemical_clean <- data_Chemical[-1, -c(1, 2, ncol(data_Chemical))]
 head(data_Chemical_clean)
-# Change data types to be all numbers
-data_cube <- as.data.frame(lapply(data_Chemical_clean, as.integer))
+# Change data types to be all numberic
+data_cube <- as.data.frame(lapply(data_Chemical_clean, function(x) round(as.numeric(x), 3)))
 head(data_cube)
 
 summary(data_cube)
@@ -22,7 +22,6 @@ ggcorrplot(cor(data_cube),
            type = "lower")
 
 # Mahalobis distance
-
 (mu.hat <- colMeans(data_cube))
 (Sigma.hat <- cov(data_cube))
 
@@ -45,15 +44,29 @@ ggplot(data.frame(dM), aes(x=dM)) +
   xlab("Mahalanobis distances and cut points") +
   ylab("Histogram and density")
 
+# Assessing measurements
 data_cube$dM <- dM
 data_cube$surprise <- cut(data_cube$dM,
                        breaks= c(0, upper.quantiles, Inf),
                        labels=c("Typical", "Somewhat", "Surprising", "Very"))
 table(data_cube$surprise)
 
+# Pairsplot
 library(GGally)
 ggpairs(data_cube, columns=1:9, 
         ggplot2::aes(col=surprise, alpha=.5),
         upper = list(continuous = "density", combo = "box_no_facet")) +
   ggplot2::scale_color_manual(values=c("lightgray", "green", "blue", "red")) +
   ggplot2::theme(axis.text.x = element_text(angle=90, hjust=1))
+
+head(data_Chemical) # Showing data
+# Leaving the class column
+data_Chemical_classes = data_Chemical_clean <- data_Chemical[-1, -c(1, 2)]
+# Consider as numeric, round to 3 decimals except class column
+data_Chemical_classes[-ncol(data_Chemical_classes)] <- lapply(data_Chemical_classes[-ncol(data_Chemical_classes)], function(x) round(as.numeric(x), 3))
+data_Chemical_classes$ Geological.structure <- as.factor(data_Chemical_classes$ Geological.structure)
+
+head(data_Chemical_classes)
+
+summary(data_Chemical_classes)
+
