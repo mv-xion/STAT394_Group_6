@@ -207,7 +207,160 @@ fa_result$Vaccounted
 fa_result$loadings 
 
 
-head(data_Chemical_classes)
 
-summary(data_Chemical_classes)
+
+# 1. Build scores data frame from your FA/PCA result
+scores_df <- as.data.frame(PCA.data_spa_waters_raw$x)   # or PCA.data_cube$x
+
+# 2. Attach BOTH categorical variables
+scores_df$Region <- data_spa_waters_classes$Region
+scores_df$Geological.structure <- data_spa_waters_classes$Geological.structure
+scores_df$Label <- 1:nrow(scores_df)
+
+# 3. Dynamic color/shape mapping for Region
+regions <- unique(scores_df$Region)
+my_colors <- c("Pannonian Basin" = "magenta",
+               "Serbo-Macedonian massif" = "blue",
+               "Carpatho-Balkans" = "black",
+               "Vardar Zone" = "red")
+
+my_shapes <- c("Pannonian Basin" = 8,
+               "Serbo-Macedonian massif" = 16,
+               "Carpatho-Balkans" = 0,
+               "Vardar Zone" = 2)
+
+# 4. Plot: points colored/shaped by Region, ellipses drawn around Geological.structure
+
+library(ggnewscale)
+
+ggplot(scores_df, aes(x = PC1, y = PC2 + PC3 + PC4)) +
+  stat_ellipse(aes(group = Geological.structure, color = Geological.structure), 
+               type = "norm", level = 0.95, 
+               linetype = 2, linewidth = 0.8) +
+  scale_color_manual(values = c("Volanogenic massif" = "blue", "Cluster II" = "red", "Hydrogeological basin" = "magenta")) +  # adjust names/colors to your actual Geological.structure categories
+  new_scale_color() +  # reset color scale so Region gets its own
+  geom_point(aes(color = Region, shape = Region), size = 3, stroke = 1.2) +
+  geom_text(aes(label = Label, color = Region), vjust = -0.8, hjust = 0.5, 
+            size = 3.5, fontface = "bold", show.legend = FALSE) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
+  scale_color_manual(values = my_colors) +
+  scale_shape_manual(values = my_shapes) +
+  labs(x = "PC 1", y = "PC 2,3,4") +
+  theme_bw() +
+  theme(legend.title = element_blank(),
+        legend.position = c(0.8, 0.85),
+        legend.background = element_rect(color = "black", linewidth = 0.3))
+
+
+#-------------------------------------------------------------------------------------
+
+
+
+
+
+
+#Scores plot:
+
+# Build the scores data frame
+scores_df <- as.data.frame(PCA.data_spa_waters_raw$x)
+scores_df$Group <- data_spa_waters_classes$Geological.structure
+scores_df$Label <- 1:nrow(scores_df)
+
+# Variance explained for axis labels
+var_explained <- (PCA.data_spa_waters_raw$sdev^2 / sum(PCA.data_spa_waters_raw$sdev^2)) * 100
+
+# Dynamic color/shape mapping (adjust palette length if you have more groups)
+groups <- unique(scores_df$Group)
+my_colors <- setNames(c("magenta", "blue", "black", "red", "darkgreen", "orange")[1:length(groups)], groups)
+my_shapes <- setNames(c(8, 16, 0, 2, 17, 15)[1:length(groups)], groups)
+
+ggplot(scores_df, aes(x = PC1, y = PC2, color = Group)) +
+  stat_ellipse(type = "norm", level = 0.95, linetype = 1, linewidth = 0.8) +
+  geom_point(aes(shape = Group), size = 3, stroke = 1.2) +
+  geom_text(aes(label = Label), vjust = -0.8, hjust = 0.5, size = 3.5, 
+            fontface = "bold", show.legend = FALSE) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
+  scale_color_manual(values = my_colors) +
+  scale_shape_manual(values = my_shapes) +
+  labs(x = paste0("PC1 : ", round(var_explained[1], 2), "%"),
+       y = paste0("PC2 : ", round(var_explained[2], 2), "%")) +
+  theme_bw() +
+  theme(legend.title = element_blank(),
+        legend.position = c(0.2, 0.85),
+        legend.background = element_rect(color = "black", linewidth = 0.3))
+
+
+#Scores plot:
+
+# Build the scores data frame
+scores_df <- as.data.frame(PCA.data_spa_waters_raw$x)
+scores_df$Group <- data_spa_waters_classes$Geological.structure
+scores_df$Label <- 1:nrow(scores_df)
+
+# Variance explained for axis labels
+var_explained <- (PCA.data_spa_waters_raw$sdev^2 / sum(PCA.data_spa_waters_raw$sdev^2)) * 100
+
+# Dynamic color/shape mapping (adjust palette length if you have more groups)
+groups <- unique(scores_df$Group)
+my_colors <- setNames(c("magenta", "blue", "black", "red", "darkgreen", "orange")[1:length(groups)], groups)
+my_shapes <- setNames(c(8, 16, 0, 2, 17, 15)[1:length(groups)], groups)
+
+ggplot(scores_df, aes(x = PC1, y = PC2, color = Group)) +
+  stat_ellipse(type = "norm", level = 0.95, linetype = 1, linewidth = 0.8) +
+  geom_point(aes(shape = Group), size = 3, stroke = 1.2) +
+  geom_text(aes(label = Label), vjust = -0.8, hjust = 0.5, size = 3.5, 
+            fontface = "bold", show.legend = FALSE) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
+  scale_color_manual(values = my_colors) +
+  scale_shape_manual(values = my_shapes) +
+  labs(x = paste0("Factor 1 (PC1) : ", round(var_explained[1], 2), "%"),
+       y = paste0("Factor 2 (PC2) : ", round(var_explained[2], 2), "%")) +
+  theme_bw() +
+  theme(legend.title = element_blank(),
+        legend.position = c(0.2, 0.85),
+        legend.background = element_rect(color = "black", linewidth = 0.3))
+
+
+#Clustering:
+
+library(ggplot2)
+
+# 1. Build the scores data frame
+scores_df <- as.data.frame(PCA.data_spa_waters_raw$x)
+scores_df$Group <- data_spa_waters_classes$Geological.structure
+scores_df$Label <- 1:nrow(scores_df)
+
+# 2. Variance explained for axis labels
+var_explained <- (PCA.data_spa_waters_raw$sdev^2 / sum(PCA.data_spa_waters_raw$sdev^2)) * 100
+
+# 3. Run clustering on the PC scores (choose number of clusters, e.g. 3)
+set.seed(123)
+k <- 3  # adjust based on your data
+km <- kmeans(scores_df[, c("PC1", "PC2")], centers = k)
+scores_df$Cluster <- factor(km$cluster)
+
+# 4. Dynamic color/shape mapping for Group
+groups <- unique(scores_df$Group)
+my_colors <- setNames(c("magenta", "blue", "black", "red", "darkgreen", "orange")[1:length(groups)], groups)
+my_shapes <- setNames(c(8, 16, 0, 2, 17, 15)[1:length(groups)], groups)
+
+ggplot(scores_df, aes(x = PC1, y = PC2)) +
+  stat_ellipse(aes(group = Cluster), type = "norm", level = 0.95, 
+               color = "grey30", linetype = 2, linewidth = 0.8) +
+  geom_point(aes(color = Group, shape = Group), size = 3, stroke = 1.2) +
+  geom_text(aes(label = Label, color = Group), vjust = -0.8, hjust = 0.5, 
+            size = 3.5, fontface = "bold", show.legend = FALSE) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
+  scale_color_manual(values = my_colors) +
+  scale_shape_manual(values = my_shapes) +
+  labs(x = paste0("Factor 1 (PC1) : ", round(var_explained[1], 2), "%"),
+       y = paste0("Factor 2 (PC2) : ", round(var_explained[2], 2), "%")) +
+  theme_bw() +
+  theme(legend.title = element_blank(),
+        legend.position = c(0.2, 0.85),
+        legend.background = element_rect(color = "black", linewidth = 0.3))
 
