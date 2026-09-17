@@ -1,0 +1,121 @@
+---
+title: "mvnreport"
+author: "Jack Hardy"
+date: "2026-09-12"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+hydrodata<-read.csv("/Users/jackhardy/Documents/GitHub/STAT394_Group_6/Data/Hydrochemical Data.csv")
+
+summary(hydrodata)
+
+hydroclean<-hydrodata[-1, 3:14]
+as.numeric(hydroclean$T)->hydroclean$T
+as.numeric(hydroclean$EC)->hydroclean$EC
+as.numeric(hydroclean$TS)->hydroclean$TS
+as.numeric(hydroclean$Ca2.)->hydroclean$Ca2.
+
+head(hydroclean)
+summary(hydroclean)
+```
+
+The multivariate normal distribution is a well-established and mathematically convenient model that underlies many statistical procedures. So it is a reasonable and important step to understand our data, a step which might decide our subsequent analysis. Tanaskovic et al. tested whether the individual variables followed a normal distribution before their analysis, and ultimately transformed the variables which failed the Shapiro-Wilk tests for normality ($H_0$: the data comes from a normally distributed population) using a Box-Cox transformation. It is simple to attempt this ourselves; we can even look at histograms and QQ-plots to visually see the same. 
+
+```{r}
+#Histograms
+par(mfrow = c(2,2))
+hist(hydroclean$T, breaks = 25)
+hist(hydroclean$pH, breaks = 25)
+hist(hydroclean$EC, breaks = 25)
+hist(hydroclean$TS, breaks =25)
+par(mfrow = c(2,2))
+hist(hydroclean$Ca2., breaks =25)
+hist(hydroclean$Mg2., breaks =25)
+hist(hydroclean$Na., breaks =25)
+hist(hydroclean$K., breaks =25)
+par(mfrow = c(2,2))
+hist(hydroclean$Cl., breaks =25)
+hist(hydroclean$SO2.4, breaks =25)
+hist(hydroclean$HCO.3, breaks =25)
+hist(hydroclean$SiO2, breaks =25)
+
+#QQ-plots
+par(mfrow = c(2,2))
+qqnorm(hydroclean$T, main = "T")
+qqline(hydroclean$T)
+qqnorm(hydroclean$pH, main = "pH")
+qqline(hydroclean$pH)
+qqnorm(hydroclean$EC, main = "EC")
+qqline(hydroclean$EC)
+qqnorm(hydroclean$TS, main = "TS")
+qqline(hydroclean$TS)
+par(mfrow = c(2,2))
+qqnorm(hydroclean$Ca2., main = "Ca2.")
+qqline(hydroclean$Ca2.)
+qqnorm(hydroclean$Mg2., main = "Mg2.")
+qqline(hydroclean$Mg2.)
+qqnorm(hydroclean$Na., main = "Na.")
+qqline(hydroclean$Na.)
+qqnorm(hydroclean$K., main = "K.")
+qqline(hydroclean$K.)
+par(mfrow = c(2,2))
+qqnorm(hydroclean$Cl., main = "Cl.")
+qqline(hydroclean$Cl.)
+qqnorm(hydroclean$SO2.4, main = "SO2.4")
+qqline(hydroclean$SO2.4)
+qqnorm(hydroclean$HCO.3, main = "HCO.3")
+qqline(hydroclean$HCO.3)
+qqnorm(hydroclean$SiO2, main = "SiO2")
+qqline(hydroclean$SiO2)
+
+#The output of the code above can be reduced by par(mfrow = c(3,4))
+
+#Shapiro-Wilk Tests
+shapiro.test(hydroclean$T)
+shapiro.test(hydroclean$pH)
+shapiro.test(hydroclean$EC)
+shapiro.test(hydroclean$TS)
+shapiro.test(hydroclean$Ca2.)
+shapiro.test(hydroclean$Mg2.)
+shapiro.test(hydroclean$Na.)
+shapiro.test(hydroclean$K.)
+shapiro.test(hydroclean$Cl.)
+shapiro.test(hydroclean$SO2.4)
+shapiro.test(hydroclean$HCO.3)
+shapiro.test(hydroclean$SiO2)
+```
+
+The histograms and QQ-plots show the individual variables deviate from normality to varying degrees. Understandably, for what the variables are, we see the measures are bounded below by zero and generally right skewed, where most observations are relatively low with a few very high values. Obviously these characteristics are different from the unbounded, symmetric normal distribution. 
+
+Just like Tanaskovic, our Shapiro-Wilk tests conclude non-normality for our variables. In fact, we find at the 0.05 level (the significance level chosen in the Tanaskovic et al. (2012)), we reject the null hypothesis for every variable. For example, the chlorine ion measure (Cl.) gets a p-value of $1.566\times10^{-10} \ll 0.05$  so we reject the null hypothesis. For the Calcium ion variable (Ca2.), the p-value is 0.02344. Therefore we reject the null hypothesis at the 0.05  significance level but we would fail to reject the null at the 0.01 significance level had we chosen it.
+
+And to the big question: does our data follow a multivariate normal distribution? We can run a couple of tests for this very question (significance level 0.05). The first we ran is Mardia's test which formally tests whether multiple variables considered together follows a multivariate normal distribution. There are a few things we need to have for Mardia's test to work its best. First we want independent observations, we don't want extreme outliers, and also want a reasonable sample size. In this case, we should only worry about the size of our sample, 30 observations is definitely smaller. Mardia's test has the null hypothesis the data follows a multivariate normal distribution and looks at two features of the data: skewness and kurtosis. Essentially whether the overall distribution is asymetric, and whether the overall distribution has heavy or light tails.
+
+```{r}
+library(psych)
+mardia(hydroclean)
+```
+
+The p-value for skewness is $4.3\times10^{-20}$ and the p-value for kurtosis is $2.6\times10^{-6}$. Both of these p-values are less than 0.05, the significance level, and so we reject the null hypothesis and say there is evidence against the data following a multivariate normal distribution. 
+
+https://metricgate.com/docs/mardias-test/
+
+These p-values are very small but for extra confidence, especially given our small sample size, we can also do a Henze-Zirkler test with null hypothesis the data follows a multivariate normal distribution. We want independent observations, numeric variables, and it is designed for multiple variables jointly. The Henze-Zirkler test can be for smaller data sets but 30 observations is still small.
+
+```{r}
+library(mvnTest)
+HZ.test(hydroclean)
+```
+
+We get a p-value of 0 from our Henze-Zirkler test and so reject the null hypothesis. So both Mardia's and the Henze-Zirkler test have evidence against multivariate normality. It would be safe to say that our data does not follow a multivariate normal distribution.
+
+https://metricgate.com/docs/henze-zirkler-test/
+
+
+
+
