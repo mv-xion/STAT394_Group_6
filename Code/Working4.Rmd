@@ -1,0 +1,128 @@
+---
+title: "Working4"
+author: "Catherine Connolly"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo=FALSE}
+data <- read.csv("Data.csv", header=TRUE)
+names(data) <- c("No.", "Name", "Temp", 
+              "pH",
+              "EC", 
+              "TS", 
+              "CA2+", 
+              "Mg2+", 
+              "NA+", 
+              "k+", 
+              "Cl-", 
+              "SO2-4", 
+              "HCO-3", 
+              "SiO2",
+              "Geological Structure",
+              "Geotectonic Zone")
+
+X = data[,3:14]
+```
+
+
+
+```{r echo=FALSE}
+#Correlation Matrix
+corr_mat = round(cor(X), 3) 
+corr_mat
+```
+
+
+```{r echo=FALSE}
+#PCA
+PCA.X = prcomp(X, center=TRUE, scale = TRUE)
+PCA.X
+summary(PCA.X)
+```
+
+
+```{r echo=FALSE}
+#PCA Loadings
+round(PCA.X$rotation, 3)
+```
+
+```{r echo=FALSE}
+#Scree Plot
+plot(PCA.X, type="l")
+```
+
+
+```{r echo=FALSE}
+### Factor analysis
+faresult = factanal(X, factors=4)
+faresult
+```
+
+
+
+
+```{r echo=FALSE}
+#Hierachical Clustering
+dist <- dist(X[ , c(4:8)] , diag=TRUE)
+hc <- hclust(dist)
+```
+
+```{r echo=FALSE}
+#Dendrogram
+dhc <- as.dendrogram(hc)                        
+
+#Dendrogram colours
+i=0
+colLab<<-function(n){
+  if(is.leaf(n)){
+    a=attributes(n)
+    m=match(attributes(n)$label,data[,1])
+    
+    #Zone Colours
+    zone=data[m,16];
+    if(zone=="Pannonian Basin"){col_zone="blue"};
+    if(zone=="Vardar Zone"){col_zone="red"}; 
+    if(zone=="Serbo-Macedonian Massif"){col_zone="darkgreen"}; 
+    if(zone=="Carpatho-Balkans"){col_zone="purple"}
+    
+    #Structure Colours
+    structure=data[m,15];
+    if(structure=="Hydrogeological basin"){col_structure="lightblue"};
+    if(structure=="Karstic terrains"){col_structure="pink"};
+    if(structure=="Volcanogenic massifs"){col_structure="lightgreen"};
+    if(structure=="Metamorphic regions"){col_structure="plum"} 
+    
+    #Leaf attributes
+    attr(n,"nodePar")<-c(a$nodePar,list(cex=1.5,lab.cex=1,pch=20,col=col_structure,lab.col=col_zone,lab.font=1,lab.cex=1))
+  }
+  return(n)
+}
+
+dL <- dendrapply(dhc, colLab)
+
+#Plot
+plot(dL , main="Title")
+
+#Legend for zones
+legend("topleft",
+       legend = c("Pannonian Basin" , "Vardar Zone" , "Serbo-Macedonian Massif" , "Carpatho-Balkans"), 
+       col = c("red", "blue" , "Darkgreen", "Purple"),
+       pch = c(4,4,4,4), bty = "n",  pt.cex = 1.5, cex = 0.8,
+       text.col = "black", horiz = FALSE,
+       inset= c(0,0))
+
+#Legend for structures      
+legend("left",
+       legend = c("Hydrogeological basin", "Karstic terrains", "Volcanogenic massifs", "Metamorphic regions"), 
+       col = c("lightblue","pink", "lightgreen", "plum"),
+       pch = c(20,20,20,20), bty = "n",  pt.cex = 1.5, cex = 0.8,
+       text.col = "black", horiz = FALSE,
+       inset= c(0,0))
+
+```
+
