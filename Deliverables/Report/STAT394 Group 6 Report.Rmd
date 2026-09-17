@@ -1,0 +1,34 @@
+---
+title: "STAT394 Group 6 Report"
+date: "2026-09-17"
+output: pdf_document
+fontsize: 12pt
+bibliography: bibliography.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## An Analysis on Tanaskovi´c et al. (2012)
+# Group 6
+
+\newpage
+
+## Introduction
+
+Serbia is located in Eastern Europe on the Balkan Peninsula. Many thermal springs can be found in Serbia. These waters are spread across different regions of the country, originating from various geological structures shaped by the region's complex geologic history. Waters from different geological origins and regions have different groundwater chemical properties due to different hydrochemical processes. (https://worldgeothermal.org/pdf/IGAstandard/WGC/2010/0164.pdf). 
+
+Tanasković et al. (2012) statistically investigated the chemical and radioactive composition of spa water from different regions in Serbia. They took samples from spa waters from 30 different locations across Serbia, measuring 12 variables related to the hydrochemical processes and 6 related to radioactive isotopes. They analysed the data using multivariate statistical analysis to see if they could establish relationships and classify spa waters based on their chemical and radiological composition and geotectonic region. They analysed the data with a Pearson Correlation Matrix, Principal Component Analysis (PCA), Factor Analysis and Hierarchical Cluster Analysis (HCA). 
+
+The 18 variables related to the spa water’s composition were loaded into four principal components, which contained 74.2% of the variation. Two of these were linked to variation in hydrochemical composition, and the other two related to radiological composition. The cluster analysis classified the waters into 4 main groups and 8 subgroups based on the similarity of water samples. From these results they were able to conclude that the geotectonic location of the spa water was a major factor in their composition. (Tanasković et al. (2012))
+We aimed to undertake a similar analysis of the data, but as we only had access to the hydrochemical data of the samples and the referred radiological data is not publicly available, we were unable to replicate their analysis.
+Based on the 12 hydrological data provided in the paper, our objective was to perform both a quantitative  and qualitative  analysis of the data in order to answer the following questions:
+
+- Can you improve the paper’s results using Factor Analysis in terms of model quality with parsimony? 
+- Are the groups identified by the dendrogram consistent with changes in the linkage and distance? 
+
+Since we were working with a reduced dataset compared to the paper by Tanasković et al. (2012), our other objective was to compare our results with the ones they got and see if we can observe similar relationships between the geological origins of spa waters
+and their hydrochemical compositions, based solely on considering the chemical properties.
+
+
