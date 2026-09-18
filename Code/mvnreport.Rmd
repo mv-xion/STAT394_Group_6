@@ -117,5 +117,112 @@ We get a p-value of 0 from our Henze-Zirkler test and so reject the null hypothe
 https://metricgate.com/docs/henze-zirkler-test/
 
 
+??
+In an attempt to get our data to jointly follow a multivariate normal distribution we could follow in the path of Tanaskovic and team in applying a Box-Cox transformation. If we can get each of our variables to follow a more normal distribution it won't guarantee a joint multivariate normal distribution, but it's worth a look anyhow. The Box-Cox transformation requires our data to be strictly positive, continuous, single-peaked (unimodal), and exhibiting a variance that changes alongside the size of measurements (heteroscedasticity).
+
+```{r}
+library(MASS)
+
+trhydroclean <- hydroclean
+
+for (col_name in names(hydroclean)) {
+  x <- hydroclean[[col_name]] 
+  #Make sure we have only strictly positive values
+  if (any(x <= 0, na.rm = TRUE)) {
+    x <- x + 0.001 
+  }
+  
+  #Get optimal lambda for the column we are in for its BC transform
+  bc <- boxcox(lm(x ~ 1), plotit = FALSE)
+  optimal_lambda <- bc$x[which.max(bc$y)]
+  
+  #Apply the BC transform to this column
+  if (abs(optimal_lambda) < 1e-3) {
+    trhydroclean[[col_name]] <- log(x)
+  } else {
+    trhydroclean[[col_name]] <- (x^optimal_lambda - 1) / optimal_lambda
+  }
+  
+}
+```
+
+```{r}
+#Histograms
+par(mfrow = c(2,2))
+hist(trhydroclean$T, breaks = 25)
+hist(trhydroclean$pH, breaks = 25)
+hist(trhydroclean$EC, breaks = 25)
+hist(trhydroclean$TS, breaks =25)
+par(mfrow = c(2,2))
+hist(trhydroclean$Ca2., breaks =25)
+hist(trhydroclean$Mg2., breaks =25)
+hist(trhydroclean$Na., breaks =25)
+hist(trhydroclean$K., breaks =25)
+par(mfrow = c(2,2))
+hist(trhydroclean$Cl., breaks =25)
+hist(trhydroclean$SO2.4, breaks =25)
+hist(trhydroclean$HCO.3, breaks =25)
+hist(trhydroclean$SiO2, breaks =25)
+
+#QQ-plots
+par(mfrow = c(2,2))
+qqnorm(trhydroclean$T, main = "T")
+qqline(trhydroclean$T)
+qqnorm(trhydroclean$pH, main = "pH")
+qqline(trhydroclean$pH)
+qqnorm(trhydroclean$EC, main = "EC")
+qqline(trhydroclean$EC)
+qqnorm(trhydroclean$TS, main = "TS")
+qqline(trhydroclean$TS)
+par(mfrow = c(2,2))
+qqnorm(trhydroclean$Ca2., main = "Ca2.")
+qqline(trhydroclean$Ca2.)
+qqnorm(trhydroclean$Mg2., main = "Mg2.")
+qqline(trhydroclean$Mg2.)
+qqnorm(trhydroclean$Na., main = "Na.")
+qqline(trhydroclean$Na.)
+qqnorm(trhydroclean$K., main = "K.")
+qqline(trhydroclean$K.)
+par(mfrow = c(2,2))
+qqnorm(trhydroclean$Cl., main = "Cl.")
+qqline(trhydroclean$Cl.)
+qqnorm(trhydroclean$SO2.4, main = "SO2.4")
+qqline(trhydroclean$SO2.4)
+qqnorm(trhydroclean$HCO.3, main = "HCO.3")
+qqline(trhydroclean$HCO.3)
+qqnorm(trhydroclean$SiO2, main = "SiO2")
+qqline(trhydroclean$SiO2)
+
+#The output of the code above can be reduced by par(mfrow = c(3,4))
+
+#Shapiro-Wilk Tests
+shapiro.test(trhydroclean$T)
+shapiro.test(trhydroclean$pH)
+shapiro.test(trhydroclean$EC)
+shapiro.test(trhydroclean$TS)
+shapiro.test(trhydroclean$Ca2.)
+shapiro.test(trhydroclean$Mg2.)
+shapiro.test(trhydroclean$Na.)
+shapiro.test(trhydroclean$K.)
+shapiro.test(trhydroclean$Cl.)
+shapiro.test(trhydroclean$SO2.4)
+shapiro.test(trhydroclean$HCO.3)
+shapiro.test(trhydroclean$SiO2)
+```
+This transformation has definitely improved the look of our histograms and QQ-plots. The right skewness of the histograms have been improved and they look much more symmetric. The QQ-plots also follow the line better now too. Our Shapiro-Wilks test confirm our transformation. All of our p-values have increased to above our 0.05 significance level and so we fail to reject the null hypothesis and conclude that each of our transformed variables follow a normal distribution.
+
+Now we can try our multivariate normal tests on our transformed variables. 
+```{r}
+library(psych)
+library(mvnTest)
+mardia(trhydroclean)
+HZ.test(trhydroclean)
+```
+First Mardia's test, we get a p-value of 0.79 for skewness and 0.038 for kurtosis. The skewness p-value is bigger than the significance value 0.05, but because we still reject for the kurtosis component (0.038<0.05) there is still sufficient evidence to conclude our data doesn't follow a multivariate normal distribution.
+
+The Henze-Zirkler test also sees an increased p-value for the transformed data. However the p-value: 0.014, is still smaller than the significance level 0.05 so we still reject the null hypothesis and conclude that the data does not jointly follow a multivariate normal distribution.
+
+The increase in p-values for each test tells us that after the transformation of our variables to be more normally distributed, the joint distribution also becomes closer to a multivariate normal distribution even if it doesn't meet the criteria for Mardia's and Henze-Zirkler tests. 
+
 
 
