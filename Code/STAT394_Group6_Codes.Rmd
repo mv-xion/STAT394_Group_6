@@ -5,7 +5,8 @@ date: "2026-09-18"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE,echo = FALSE)
+
 ```
 
 ```{r install-packages, eval=FALSE}
