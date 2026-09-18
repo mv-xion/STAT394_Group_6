@@ -1,0 +1,638 @@
+---
+title: "STAT394_Group6_Codes"
+output: pdf_document
+date: "2026-09-18"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r install-packages, eval=FALSE}
+
+install.packages(c("reshape2", "ggplot2", "ggcorrplot", "GGally", "psych", "ggnewscale","rstatix"))
+install.packages("devtools")
+devtools::install_github("vqv/ggbiplot")
+
+
+```
+
+```{r load-libraries}
+library(rstatix)
+library(MASS)
+library(car)
+library(here)
+library(reshape2)
+library(ggplot2)
+library(ggcorrplot)
+library(GGally)
+library(ggbiplot)
+library(psych)
+library(ggnewscale)
+```
+
+
+```{r echo=FALSE}
+data <- read.csv(file.path("..","Data","Data.csv"), header=TRUE)
+names(data) <- c("No.", "Name", "Temp", 
+              "pH",
+              "EC", 
+              "TS", 
+              "CA2+", 
+              "Mg2+", 
+              "NA+", 
+              "k+", 
+              "Cl-", 
+              "SO2-4", 
+              "HCO-3", 
+              "SiO2",
+              "Geological Structure",
+              "Geotectonic Zone")
+
+X = data[,3:14]
+```
+
+
+
+```{r echo=FALSE}
+#Correlation Matrix
+corr_mat = round(cor(X), 3) 
+corr_mat
+```
+
+
+```{r echo=FALSE}
+#PCA
+PCA.X = prcomp(X, center=TRUE, scale = TRUE)
+PCA.X
+summary(PCA.X)
+```
+
+
+```{r echo=FALSE}
+#PCA Loadings
+round(PCA.X$rotation, 3)
+```
+
+```{r echo=FALSE}
+#Scree Plot
+plot(PCA.X, type="l")
+```
+
+
+```{r echo=FALSE}
+### Factor analysis
+faresult = factanal(X, factors=4)
+faresult
+```
+```{r}
+
+data <- read.csv(file.path("..","Data","Data.csv"), header=TRUE)
+summary(data)
+hydroclean<-data[, 3:14]
+as.numeric(hydroclean$T)->hydroclean$T
+as.numeric(hydroclean$EC)->hydroclean$EC
+as.numeric(hydroclean$TS)->hydroclean$TS
+as.numeric(hydroclean$Ca2.)->hydroclean$Ca2.
+
+head(hydroclean)
+summary(hydroclean)
+```
+
+The multivariate normal distribution is a well-established and mathematically convenient model that underlies many statistical procedures. So it is a reasonable and important step to understand our data, a step which might decide our subsequent analysis. Tanaskovic et al. tested whether the individual variables followed a normal distribution before their analysis, and ultimately transformed the variables which failed the Shapiro-Wilk tests for normality ($H_0$: the data comes from a normally distributed population) using a Box-Cox transformation. It is simple to attempt this ourselves; we can even look at histograms and QQ-plots to visually see the same. 
+
+```{r}
+#Histograms
+par(mfrow = c(2,2))
+hist(hydroclean$T, breaks = 25)
+hist(hydroclean$pH, breaks = 25)
+hist(hydroclean$EC, breaks = 25)
+hist(hydroclean$TS, breaks =25)
+par(mfrow = c(2,2))
+hist(hydroclean$Ca2., breaks =25)
+hist(hydroclean$Mg2., breaks =25)
+hist(hydroclean$Na., breaks =25)
+hist(hydroclean$K., breaks =25)
+par(mfrow = c(2,2))
+hist(hydroclean$Cl., breaks =25)
+hist(hydroclean$SO2.4, breaks =25)
+hist(hydroclean$HCO.3, breaks =25)
+hist(hydroclean$SiO2, breaks =25)
+
+#QQ-plots
+par(mfrow = c(2,2))
+qqnorm(hydroclean$T, main = "T")
+qqline(hydroclean$T)
+qqnorm(hydroclean$pH, main = "pH")
+qqline(hydroclean$pH)
+qqnorm(hydroclean$EC, main = "EC")
+qqline(hydroclean$EC)
+qqnorm(hydroclean$TS, main = "TS")
+qqline(hydroclean$TS)
+par(mfrow = c(2,2))
+qqnorm(hydroclean$Ca2., main = "Ca2.")
+qqline(hydroclean$Ca2.)
+qqnorm(hydroclean$Mg2., main = "Mg2.")
+qqline(hydroclean$Mg2.)
+qqnorm(hydroclean$Na., main = "Na.")
+qqline(hydroclean$Na.)
+qqnorm(hydroclean$K., main = "K.")
+qqline(hydroclean$K.)
+par(mfrow = c(2,2))
+qqnorm(hydroclean$Cl., main = "Cl.")
+qqline(hydroclean$Cl.)
+qqnorm(hydroclean$SO2.4, main = "SO2.4")
+qqline(hydroclean$SO2.4)
+qqnorm(hydroclean$HCO.3, main = "HCO.3")
+qqline(hydroclean$HCO.3)
+qqnorm(hydroclean$SiO2, main = "SiO2")
+qqline(hydroclean$SiO2)
+
+#The output of the code above can be reduced by par(mfrow = c(3,4))
+
+#Shapiro-Wilk Tests
+shapiro.test(hydroclean$T)
+shapiro.test(hydroclean$pH)
+shapiro.test(hydroclean$EC)
+shapiro.test(hydroclean$TS)
+shapiro.test(hydroclean$Ca2.)
+shapiro.test(hydroclean$Mg2.)
+shapiro.test(hydroclean$Na.)
+shapiro.test(hydroclean$K.)
+shapiro.test(hydroclean$Cl.)
+shapiro.test(hydroclean$SO2.4)
+shapiro.test(hydroclean$HCO.3)
+shapiro.test(hydroclean$SiO2)
+```
+
+The histograms and QQ-plots show the individual variables deviate from normality to varying degrees. Understandably, for what the variables are, we see the measures are bounded below by zero and generally right skewed, where most observations are relatively low with a few very high values. Obviously these characteristics are different from the unbounded, symmetric normal distribution. 
+
+Just like Tanaskovic, our Shapiro-Wilk tests conclude non-normality for our variables. In fact, we find at the 0.05 level (the significance level chosen in the Tanaskovic et al. (2012)), we reject the null hypothesis for every variable. For example, the chlorine ion measure (Cl.) gets a p-value of $1.566\times10^{-10} \ll 0.05$  so we reject the null hypothesis. For the Calcium ion variable (Ca2.), the p-value is 0.02344. Therefore we reject the null hypothesis at the 0.05  significance level but we would fail to reject the null at the 0.01 significance level had we chosen it.
+
+And to the big question: does our data follow a multivariate normal distribution? We can run a couple of tests for this very question (significance level 0.05). The first we ran is Mardia's test which formally tests whether multiple variables considered together follows a multivariate normal distribution. There are a few things we need to have for Mardia's test to work its best. First we want independent observations, we don't want extreme outliers, and also want a reasonable sample size. In this case, we should only worry about the size of our sample, 30 observations is definitely smaller. Mardia's test has the null hypothesis the data follows a multivariate normal distribution and looks at two features of the data: skewness and kurtosis. Essentially whether the overall distribution is asymetric, and whether the overall distribution has heavy or light tails.
+
+```{r}
+library(psych)
+mardia(hydroclean)
+```
+
+The p-value for skewness is $4.3\times10^{-20}$ and the p-value for kurtosis is $2.6\times10^{-6}$. Both of these p-values are less than 0.05, the significance level, and so we reject the null hypothesis and say there is evidence against the data following a multivariate normal distribution. 
+
+https://metricgate.com/docs/mardias-test/
+
+These p-values are very small but for extra confidence, especially given our small sample size, we can also do a Henze-Zirkler test with null hypothesis the data follows a multivariate normal distribution. We want independent observations, numeric variables, and it is designed for multiple variables jointly. The Henze-Zirkler test can be for smaller data sets but 30 observations is still small.
+
+```{r}
+library(mvnTest)
+HZ.test(hydroclean)
+```
+
+We get a p-value of 0 from our Henze-Zirkler test and so reject the null hypothesis. So both Mardia's and the Henze-Zirkler test have evidence against multivariate normality. It would be safe to say that our data does not follow a multivariate normal distribution.
+
+https://metricgate.com/docs/henze-zirkler-test/
+
+
+
+
+Dendogram
+
+```{r echo=FALSE}
+#Hierachical Clustering
+dist <- dist(X[ , c(4:8)] , diag=TRUE)
+hc <- hclust(dist)
+```
+
+```{r echo=FALSE}
+#Dendrogram
+dhc <- as.dendrogram(hc)                        
+
+#Dendrogram colours
+i=0
+colLab<<-function(n){
+  if(is.leaf(n)){
+    a=attributes(n)
+    m=match(attributes(n)$label,data[,1])
+    
+    #Zone Colours
+    zone=data[m,16];
+    if(zone=="Pannonian Basin"){col_zone="blue"};
+    if(zone=="Vardar Zone"){col_zone="red"}; 
+    if(zone=="Serbo-Macedonian Massif"){col_zone="darkgreen"}; 
+    if(zone=="Carpatho-Balkans"){col_zone="purple"}
+    
+    #Structure Colours
+    structure=data[m,15];
+    if(structure=="Hydrogeological basin"){col_structure="lightblue"};
+    if(structure=="Karstic terrains"){col_structure="pink"};
+    if(structure=="Volcanogenic massifs"){col_structure="lightgreen"};
+    if(structure=="Metamorphic regions"){col_structure="plum"} 
+    
+    #Leaf attributes
+    attr(n,"nodePar")<-c(a$nodePar,list(cex=1.5,lab.cex=1,pch=20,col=col_structure,lab.col=col_zone,lab.font=1,lab.cex=1))
+  }
+  return(n)
+}
+
+dL <- dendrapply(dhc, colLab)
+
+#Plot
+plot(dL , main="Title")
+
+#Legend for zones
+legend("topleft",
+       legend = c("Pannonian Basin" , "Vardar Zone" , "Serbo-Macedonian Massif" , "Carpatho-Balkans"), 
+       col = c("red", "blue" , "Darkgreen", "Purple"),
+       pch = c(4,4,4,4), bty = "n",  pt.cex = 1.5, cex = 0.8,
+       text.col = "black", horiz = FALSE,
+       inset= c(0,0))
+
+#Legend for structures      
+legend("left",
+       legend = c("Hydrogeological basin", "Karstic terrains", "Volcanogenic massifs", "Metamorphic regions"), 
+       col = c("lightblue","pink", "lightgreen", "plum"),
+       pch = c(20,20,20,20), bty = "n",  pt.cex = 1.5, cex = 0.8,
+       text.col = "black", horiz = FALSE,
+       inset= c(0,0))
+
+```
+### Cleaning data
+
+Remove the first row and the first 2 columns (number, place name).
+
+```{r clean-data}
+data_spa_waters <- read.csv(file.path("..","Data","Hydrochemical Data.csv"), header=TRUE)
+data_spa_waters_classes <- data_spa_waters[-1, -c(1, 2)]
+ncolumns_data_spa_waters_classes <- ncol(data_spa_waters_classes)
+```
+
+Consider data as numeric, round to 3 decimals except the class columns.
+
+```{r convert-numeric}
+
+data_spa_waters_classes[-c(ncolumns_data_spa_waters_classes - 1, ncolumns_data_spa_waters_classes)] <-
+  lapply(
+    data_spa_waters_classes[-c(ncolumns_data_spa_waters_classes - 1, ncolumns_data_spa_waters_classes)],
+    function(x) round(as.numeric(x), 3)
+  )
+
+# Set Structure and Region as factors
+data_spa_waters_classes$Geological.structure <- as.factor(data_spa_waters_classes$Geological.structure)
+data_spa_waters_classes$Region <- as.factor(data_spa_waters_classes$Region)
+```
+
+Show the data.
+
+```{r show-classes-data}
+
+head(data_spa_waters_classes)
+summary(data_spa_waters_classes)
+```
+
+Remove the last 2 columns to get the raw numerical data.
+
+```{r raw-data}
+
+data_spa_waters_raw <- data_spa_waters_classes[, -c(ncolumns_data_spa_waters_classes - 1, ncolumns_data_spa_waters_classes)]
+
+head(data_spa_waters_raw)
+summary(data_spa_waters_raw)
+```
+
+## Correlation Analysis
+
+```{r correlation-matrix}
+
+cor(data_spa_waters_raw)
+```
+
+### Pairs plot
+
+```{r pairs-plot, fig.width=9, fig.height=9}
+
+ggpairs(data_spa_waters_raw)
+```
+
+### Correlogram
+
+```{r correlogram}
+
+ggcorrplot(cor(data_spa_waters_raw),
+            method = "circle",
+            type = "lower",
+            lab = TRUE)
+```
+
+### Correlogram, hierarchically ordered
+
+```{r correlogram-ordered}
+
+ggcorrplot(cor(data_spa_waters_raw),
+            method = "circle",
+            hc.order = TRUE,
+            type = "lower",
+            lab = TRUE)
+```
+
+> **TODO:** analysing correlations between compounds
+
+## Multivariate Outlier Assessment (Mahalanobis Distance)
+
+Mahalanobis distance for assessing measurements multivariately.
+
+```{r mahalanobis-setup}
+
+(mu.hat <- colMeans(data_spa_waters_raw))
+(Sigma.hat <- cov(data_spa_waters_raw))
+
+dM <- mahalanobis(data_spa_waters_raw, center = mu.hat, cov = Sigma.hat)
+
+upper.quantiles <- qchisq(c(.9, .95, .99), df = 9)
+density.at.quantiles <- dchisq(x = upper.quantiles, df = 9)
+cut.points <- data.frame(upper.quantiles, density.at.quantiles)
+```
+
+```{r mahalanobis-plot}
+
+ggplot(data.frame(dM), aes(x = dM)) +
+  geom_histogram(aes(y = after_stat(density)), bins = nclass.FD(dM),
+                 fill = "white", col = "black") +
+  geom_rug() +
+  stat_function(fun = dchisq, args = list(df = 9),
+                col = "red", size = 2, alpha = .7, xlim = c(0, 25)) +
+  geom_segment(data = cut.points,
+               aes(x = upper.quantiles, xend = upper.quantiles,
+                   y = rep(0, 3), yend = density.at.quantiles),
+               col = "blue", size = 2) +
+  xlab("Mahalanobis distances and cut points") +
+  ylab("Histogram and density")
+```
+
+### Assessing measurements
+
+```{r surprise-classification}
+
+data_spa_waters_raw$dM <- dM
+data_spa_waters_raw$surprise <- cut(
+  data_spa_waters_raw$dM,
+  breaks = c(0, upper.quantiles, Inf),
+  labels = c("Typical", "Somewhat", "Surprising", "Very")
+)
+table(data_spa_waters_raw$surprise)
+```
+
+### Pairs plot colored by surprise level
+
+```{r pairs-plot-surprise, fig.width=9, fig.height=9}
+
+ggpairs(data_spa_waters_raw, columns = 1:9,
+        ggplot2::aes(col = surprise, alpha = .5),
+        upper = list(continuous = "density", combo = "box_no_facet")) +
+  ggplot2::scale_color_manual(values = c("lightgray", "green", "blue", "red")) +
+  ggplot2::theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+## Analyzing the Data with Classes
+
+### Melting the data
+
+```{r melt-data}
+
+data_spa_waters_classes.melt <- melt(
+  data = data_spa_waters_classes[-ncolumns_data_spa_waters_classes],
+  id.vars = "Geological.structure",
+  variable.name = "Chemical_Compound"
+)
+```
+
+### Box plots with notches
+
+```{r boxplot-notched, fig.width=9}
+
+ggplot(data = data_spa_waters_classes.melt, aes(x = Chemical_Compound, y = value)) +
+  geom_boxplot(aes(col = Chemical_Compound), notch = TRUE) +
+  facet_grid(~ Geological.structure) +
+  ylab("Measurements") +
+  theme(axis.text.x = element_text(size = 7, angle = 90, hjust = 1),
+        legend.position = "none")
+```
+
+> Notice, the data doesn't have enough samples for the notches to appear nicely.
+
+### Box plots, log scale geology
+
+```{r boxplot-log, fig.width=9}
+
+ggplot(data = data_spa_waters_classes.melt, aes(x = Chemical_Compound, y = value)) +
+  geom_boxplot(aes(col = Chemical_Compound), notch = FALSE) +
+  scale_y_log10() +
+  facet_grid(. ~ Geological.structure) +
+  ylab("Measurements") +
+  theme(axis.text.x = element_text(size = 7, angle = 90, hjust = 1),
+        legend.position = "none")
+```
+
+### Box plots, log scale region
+```{r melt-data-region}
+
+data_spa_waters_classes.melt <- melt(
+  data = data_spa_waters_classes[-(ncolumns_data_spa_waters_classes-1)],
+  id.vars = "Region",
+  variable.name = "Chemical_Compound"
+)
+```
+
+```{r boxplot-log-region, fig.width=9}
+
+ggplot(data = data_spa_waters_classes.melt, aes(x = Chemical_Compound, y = value)) +
+  geom_boxplot(aes(col = Chemical_Compound), notch = FALSE) +
+  scale_y_log10() +
+  facet_grid(. ~ Region) +
+  ylab("Measurements") +
+  theme(axis.text.x = element_text(size = 7, angle = 90, hjust = 1),
+        legend.position = "none")
+```
+
+
+> **TODO:** Analyse box plots
+
+## Principal Component Analysis (PCA)
+
+Reset `data_spa_waters_raw` back to the original (without the Mahalanobis columns added earlier).
+
+```{r pca-reset-raw}
+
+data_spa_waters_raw <- data_spa_waters_classes[, -c(ncolumns_data_spa_waters_classes - 1, ncolumns_data_spa_waters_classes)]
+```
+
+### Calculate PCA
+
+```{r pca-calculate}
+
+PCA.data_spa_waters_raw <- prcomp(data_spa_waters_raw, center = TRUE, scale = TRUE)
+summary(PCA.data_spa_waters_raw)
+```
+
+### Variance explained (scree plot)
+
+```{r pca-scree}
+
+plot(PCA.data_spa_waters_raw, type = "l")
+```
+
+> **TODO:** Say some words about it
+
+### PCA components
+
+```{r pca-components}
+
+options(digits = 4)
+PCA.data_spa_waters_raw$center   # Means of the data
+PCA.data_spa_waters_raw$sdev     # Standard deviations of the data
+PCA.data_spa_waters_raw$rotation # PC contributions of each variable (eigenvectors)
+```
+
+
+### Biplots
+
+
+Biplot grouped by Geological structure.
+
+```{r biplot-geological-structure}
+
+ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1,
+         groups = interaction(data_spa_waters_classes$Geological.structure), ellipse = TRUE)
+```
+
+Biplot grouped by Region.
+
+```{r biplot-region}
+
+ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1,
+         groups = interaction(data_spa_waters_classes$Region), ellipse = TRUE)
+```
+
+```{r pca-scores-summary}
+
+summary(PCA.data_spa_waters_raw$x)
+```
+
+Biplot for PC1 vs PC3.
+
+```{r biplot-pc1-pc3}
+
+ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1, circle = TRUE, choices = c(1, 3))
+
+ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1, choices = c(1, 3),
+         groups = interaction(data_spa_waters_classes$Geological.structure), ellipse = TRUE)
+
+ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1, choices = c(1, 3),
+         groups = interaction(data_spa_waters_classes$Region), ellipse = TRUE)
+```
+
+> **TODO:** Analyse the pair plots
+
+```{r pca-importance}
+
+print(summary(PCA.data_spa_waters_raw)$importance[, 1:4])
+```
+
+## Factor Analysis
+
+### Factor analysis with `factanal`
+
+Choosing number of factors via p-value.
+
+```{r factanal-pvalues}
+
+n <- 4
+pvalues <- rep(0, n)
+
+for (f in 1:n)
+  pvalues[f] <- factanal(data_spa_waters_raw, factors = f)$PVAL
+
+ggplot(data.frame(pvalues), aes(x = 1:n, y = pvalues)) +
+  geom_point(size = 3) +
+  xlab("Number of factors")
+```
+
+```{r factanal-4factors}
+
+factanal(data_spa_waters_raw, factors = 4)
+```
+
+```{r factanal-diagram}
+
+fa.diagram(factanal(data_spa_waters_raw, factors = 4)$loadings, digits = 3)
+```
+
+```{r factanal-scores}
+
+fa_result <- factanal(data_spa_waters_raw, factors = 4, rotation = "varimax", scores = "regression")
+fa_result$scores
+```
+
+```{r factanal-scores-plot, eval=FALSE}
+
+# Note: only run if fa_result$scores is not NULL
+ggplot(fa_result$scores, aes(x = Factor1, y = Factor2)) +
+  geom_point()
+```
+
+### Factor Analysis based on Principal Components (Varimax rotation)
+
+```{r principal-varimax}
+
+fa_result <- principal(data_spa_waters_raw, nfactors = 4, rotate = "varimax")
+
+# Check variance accounted for by each rotated factor
+fa_result$Vaccounted
+
+fa_result$loadings
+
+fa.diagram(principal(data_spa_waters_raw, nfactors = 4, rotate = "varimax")$loadings, digits = 3)
+```
+
+## Score Plots
+
+## Clustering on PCA Scores
+
+```{r clustering-kmeans}
+
+# 1. Build the scores data frame
+scores_df <- as.data.frame(PCA.data_spa_waters_raw$x)
+scores_df$Group <- data_spa_waters_classes$Geological.structure #Region
+scores_df$Label <- 1:nrow(scores_df)
+
+# 2. Variance explained for axis labels
+var_explained <- (PCA.data_spa_waters_raw$sdev^2 / sum(PCA.data_spa_waters_raw$sdev^2)) * 100
+
+# 3. Run clustering on the PC scores (choose number of clusters, e.g. 3)
+set.seed(123)
+k <- 2  # adjust based on your data
+km <- kmeans(scores_df[, c("PC1", "PC2")], centers = k)
+scores_df$Cluster <- factor(km$cluster)
+
+# 4. Dynamic color/shape mapping for Group
+groups <- unique(scores_df$Group)
+my_colors <- setNames(c("magenta", "blue", "black", "red", "darkgreen", "orange")[1:length(groups)], groups)
+my_shapes <- setNames(c(8, 16, 0, 2, 17, 15)[1:length(groups)], groups)
+
+ggplot(scores_df, aes(x = PC1, y = PC2)) +
+  stat_ellipse(aes(group = Cluster), type = "norm", level = 0.95,
+               color = "grey30", linetype = 2, linewidth = 0.8) +
+  geom_point(aes(color = Group, shape = Group), size = 3, stroke = 1.2) +
+  geom_text(aes(label = Label, color = Group), vjust = -0.8, hjust = 0.5,
+            size = 3.5, fontface = "bold", show.legend = FALSE) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
+  scale_color_manual(values = my_colors) +
+  scale_shape_manual(values = my_shapes) +
+  labs(x = paste0("Factor 1 (PC1) : ", round(var_explained[1], 2), "%"),
+       y = paste0("Factor 2 (PC2) : ", round(var_explained[2], 2), "%")) +
+  theme_bw() +
+  theme(legend.title = element_blank(),
+        legend.position = c(0.2, 0.85),
+        legend.background = element_rect(color = "black", linewidth = 0.3))
+```
+
