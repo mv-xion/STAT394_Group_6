@@ -1,6 +1,6 @@
 ---
-title: "STAT394 Group 6 Report"
-date: "2026-09-17"
+title: "An Analysis on Tanaskovi'c et al. (2012)"
+author: "STAT394 Group 6"
 output: pdf_document
 indent: True
 fontsize: 12pt
@@ -31,6 +31,7 @@ library(GGally)
 library(ggbiplot)
 library(psych)
 library(ggnewscale)
+library(pander)
 
 set.seed(123)
 ```
@@ -79,26 +80,19 @@ data_spa_waters_classes$Region <- as.factor(data_spa_waters_classes$Region)
 
 data_spa_waters_raw <- data_spa_waters_classes[, -c(ncolumns_data_spa_waters_classes - 1, ncolumns_data_spa_waters_classes)]
 
-head(data_spa_waters_raw)
+
 ```
 
 ```{r data-read-jack}
 
 data <- read.csv(file.path("..","..","Data","Data.csv"), header=TRUE)
-summary(data)
+
 hydroclean<-data[, 3:14]
 as.numeric(hydroclean$T)->hydroclean$T
 as.numeric(hydroclean$EC)->hydroclean$EC
 as.numeric(hydroclean$TS)->hydroclean$TS
 as.numeric(hydroclean$Ca2.)->hydroclean$Ca2.
-
-head(hydroclean)
-summary(hydroclean)
 ```
-
-
-# An Analysis on Tanaskovi´c et al. (2012)
-### Group 6
 
 \newpage
 
@@ -150,20 +144,100 @@ Factor loadings from the PCA show how much each original variable contributes to
 
 ## 3.2 Correlations analysis
 
+```{r correlogram}
 
-Correlation graph
+ggcorrplot(cor(data_spa_waters_raw),
+            method = "circle",
+            type = "lower",
+            lab = TRUE)
+```
 
-```{r echo=FALSE}
-#Correlation Matrix
-corr_mat = round(cor(X), 3) 
-corr_mat
+```{r pairs-plot1, fig.width=8, fig.height=8}
+
+ggpairs(data_spa_waters_raw)
 ```
 
 A pairs plot shows us both the distribution of each variable on the diagonal and the correlation between each pair of variables. Significant correlations are marked with stars on the pairs plot. The correlation between variables can also be represented on a correlogram, which highlights correlations by size and colour for easier interpretability.
 The variables exhibit correlations ranging from moderate negative correlation, the lowest being -0.48, to high positive correlations, the highest reaching 0.96. The highest correlation is between EC and TS, while Na+ also shows moderate to high correlations with HCO3-, Cl-, K+, EC and TS (0.88, 0.67,0.65 and 0.59, respectively). Apart from Na+, HCO3- shows high correlations with K+, EC and TS (0.83, 0.62, 0.53). Weak to moderate negative associations are exhibited between pH and Mg2+, K+, and Ca2+ (-0.48, -0.46,-0.45). T is weakly positively correlated with SiO2 and negatively correlated with Ca2+ and Mg2+, with similar values around +-0.36.
 Moreover, we can see that some of the variables seem to resemble a truncated normal distribution, like the temperature, pH, EC, TS and SiO2, while others have drastically different distributions.
 
-QQ AND HISTOGRAMS
+```{r}
+#Histograms
+par(mfrow = c(3,2))
+hist(hydroclean$T, breaks = 25)
+hist(hydroclean$pH, breaks = 25)
+hist(hydroclean$EC, breaks = 25)
+hist(hydroclean$TS, breaks =25)
+hist(hydroclean$Ca2., breaks =25)
+hist(hydroclean$Mg2., breaks =25)
+par(mfrow = c(3,2))
+hist(hydroclean$Na., breaks =25)
+hist(hydroclean$K., breaks =25)
+hist(hydroclean$Cl., breaks =25)
+hist(hydroclean$SO2.4, breaks =25)
+hist(hydroclean$HCO.3, breaks =25)
+hist(hydroclean$SiO2, breaks =25)
+
+#QQ-plots
+par(mfrow = c(3,2))
+qqnorm(hydroclean$T, main = "T")
+qqline(hydroclean$T)
+qqnorm(hydroclean$pH, main = "pH")
+qqline(hydroclean$pH)
+qqnorm(hydroclean$EC, main = "EC")
+qqline(hydroclean$EC)
+qqnorm(hydroclean$TS, main = "TS")
+qqline(hydroclean$TS)
+qqnorm(hydroclean$Ca2., main = "Ca2.")
+qqline(hydroclean$Ca2.)
+qqnorm(hydroclean$Mg2., main = "Mg2.")
+qqline(hydroclean$Mg2.)
+par(mfrow = c(3,2))
+qqnorm(hydroclean$Na., main = "Na.")
+qqline(hydroclean$Na.)
+qqnorm(hydroclean$K., main = "K.")
+qqline(hydroclean$K.)
+qqnorm(hydroclean$Cl., main = "Cl.")
+qqline(hydroclean$Cl.)
+qqnorm(hydroclean$SO2.4, main = "SO2.4")
+qqline(hydroclean$SO2.4)
+qqnorm(hydroclean$HCO.3, main = "HCO.3")
+qqline(hydroclean$HCO.3)
+qqnorm(hydroclean$SiO2, main = "SiO2")
+qqline(hydroclean$SiO2)
+
+#The output of the code above can be reduced by par(mfrow = c(3,4))
+
+#Shapiro-Wilk Tests
+shapiros <- c(shapiro.test(hydroclean$T),
+shapiro.test(hydroclean$pH),
+shapiro.test(hydroclean$EC),
+shapiro.test(hydroclean$TS),
+shapiro.test(hydroclean$Ca2.),
+shapiro.test(hydroclean$Mg2.),
+shapiro.test(hydroclean$Na.),
+shapiro.test(hydroclean$K.),
+shapiro.test(hydroclean$Cl.),
+shapiro.test(hydroclean$SO2.4),
+shapiro.test(hydroclean$HCO.3),
+shapiro.test(hydroclean$SiO2))
+
+# making a dataframe of test results to visualise in a table
+completed_tests <- data.frame(
+  variable = c("T", "pH", "EC", "TS", "Ca2", "Mg2", "Na", "K", "Cl", "SO2.4",
+               "HCO.3", "SiO2"),
+  statistic = c(0.7982, 0.8797, 0.8706, 0.8245, 0.9177, 0.645, 0.7763, 0.812,
+                0.3403, 0.5452, 0.8539, 0.8304),
+  p = as.numeric(c("6.092e-05", "0.002769", "0.001726", "0.00019", "0.02344", "2.714e-07",
+        "2.501e-05", "0.0001092", "1.566e-10", "1.664e-08", "0.0007483", "0.0002479")))
+
+# table of normality tests
+panderOptions('table.style', 'rmarkdown')
+pander(completed_tests, 
+       split.table = Inf,               
+       justify = c('left', 'center', 'center'),
+       col.names = c("Variable", "Statistic", "p-value"))
+```
 
 Tanaskovic et al. tested whether the individual variables followed a normal distribution before their analysis, and ultimately transformed the variables which failed the Shapiro-Wilk’s tests for normality ($H_0$: the data comes from a normally distributed population) using a Box-Cox transformation. We can also look at histograms and QQ-plots and apply the Shapiro-Wilk’s tests to check for ourselves if we have variables that follow a normal distribution.
 
@@ -172,6 +246,11 @@ Just like Tanaskovic, our Shapiro-Wilk tests conclude non-normality for our vari
 
 The first we ran is Mardia's test (significance level 0.05), which formally tests whether multiple variables considered together follow a multivariate normal distribution. There are a few things we need to have for Mardia's test to work best. First, we want independent observations; we don't want extreme outliers, and we also want a reasonable sample size. In this case, we should only worry about the size of our sample; 30 observations is definitely small. Mardia's test has the null hypothesis that the data follows a multivariate normal distribution and looks at two features of the data: skewness and kurtosis. Essentially, it tests whether the overall distribution is asymmetric and whether the overall distribution has heavy or light tails.
 The p-value for skewness is $4.3\times10^{-20}$ and the p-value for kurtosis is $2.6\times10^{-6}$. Both of these p-values are less than 0.05, the significance level, and so we reject the null hypothesis and say there is evidence against the data following a multivariate normal distribution. https://metricgate.com/docs/mardias-test/ 
+```{r}
+library(psych)
+mardia(hydroclean)
+```
+
 These p-values are very small, but for extra confidence, especially given our small sample size, we can also do a Henze-Zirkler test, which has the null hypothesis that the data follows a multivariate normal distribution. We want independent observations and numeric variables, as it is designed for multiple variables jointly. The Henze-Zirkler test can be used for smaller data sets, but 30 observations is still small.
 We get a p-value of 0 from our Henze-Zirkler test and so reject the null hypothesis. So both Mardia's and the Henze-Zirkler test have evidence against multivariate normality. It would be safe to say that our data does not follow a multivariate normal distribution. https://metricgate.com/docs/henze-zirkler-test/ 
 
@@ -179,8 +258,8 @@ We get a p-value of 0 from our Henze-Zirkler test and so reject the null hypothe
 
 ```{r mahalanobis-setup, Echo = FALSE}
 
-(mu.hat <- colMeans(data_spa_waters_raw))
-(Sigma.hat <- cov(data_spa_waters_raw))
+mu.hat <- colMeans(data_spa_waters_raw)
+Sigma.hat <- cov(data_spa_waters_raw)
 
 dM <- mahalanobis(data_spa_waters_raw, center = mu.hat, cov = Sigma.hat)
 
@@ -207,9 +286,23 @@ ggplot(data.frame(dM), aes(x = dM)) +
 
 The mahalanobis distance graph shows 10 past the first two thresholds, with five of these being past all three. These observations are surprising assuming a multivariate normal distribution. The points are observations: 1, 2, 4, 15, 16, 23, 24, 28, 29 and 30.
 
-```{r pairs-plot, fig.width=9, fig.height=9}
+```{r surprise-classification}
 
-ggpairs(data_spa_waters_raw)
+data_spa_waters_raw$dM <- dM
+data_spa_waters_raw$surprise <- cut(
+  data_spa_waters_raw$dM,
+  breaks = c(0, upper.quantiles, Inf),
+  labels = c("Typical", "Somewhat", "Surprising", "Very")
+)
+```
+
+```{r pairs-plot-surprise, fig.width=9, fig.height=9}
+
+ggpairs(data_spa_waters_raw, columns = 1:9,
+        ggplot2::aes(col = surprise, alpha = .5),
+        upper = list(continuous = "density", combo = "box_no_facet")) +
+  ggplot2::scale_color_manual(values = c("lightgray", "green", "blue", "red")) +
+  ggplot2::theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
 Looking at the pairs plot, we can see a clear positive relationship between the electrical conductivity (EC) and total solids (TS) variables. This indicates that samples with higher electrical conductivity had a higher amount of total solids. We can also see how there is a notable difference in the distribution of electrical conductivity and total solids values for different geological structures. This suggests that the geological structure may be associated with the amount of electrical conductivity and total solids in a given sample. Chlorine (Cl) and Magnesium (Mg2) appear to have a highly right-skewed distribution across the sample, which is caused by a few extreme values.
@@ -225,6 +318,9 @@ data_spa_waters_classes.melt <- melt(
 )
 ```
 
+
+
+The chemical composition of the classes couldn’t be analysed with boxplots with notches due to the low number of samples in the data. For the correct analysis boxplots without the notches were analysed, usng log-scale for the variables to be all shown on one plot.
 ```{r boxplot-log, fig.width=9}
 
 ggplot(data = data_spa_waters_classes.melt, aes(x = Chemical_Compound, y = value)) +
@@ -235,8 +331,6 @@ ggplot(data = data_spa_waters_classes.melt, aes(x = Chemical_Compound, y = value
   theme(axis.text.x = element_text(size = 7, angle = 90, hjust = 1),
         legend.position = "none")
 ```
-
-The chemical composition of the classes couldn’t be analysed with boxplots with notches due to the now number of samples in the data. For the correct analysis boxplots without the notches were analysed, usng log-scale for the variables to be all shown on one plot.
 
 ```{r melt-data-region}
 
@@ -269,7 +363,6 @@ data_spa_waters_raw <- data_spa_waters_classes[, -c(ncolumns_data_spa_waters_cla
 ```{r pca-calculate}
 
 PCA.data_spa_waters_raw <- prcomp(data_spa_waters_raw, center = TRUE, scale = TRUE)
-summary(PCA.data_spa_waters_raw)
 ```
 
 ```{r pca-scree}
@@ -279,15 +372,9 @@ plot(PCA.data_spa_waters_raw, type = "l")
 
 We can see that the first PC explains a larger portion of the variance of the data, then from PC2 - PC6 they explain similar proportions. Using four PCs, 74.73% of the cumulative variance is captured, with PC1 explaining 35.1%, PC2 17.5%, PC3 12,4% and PC4 9.74% of the total variance.
 
-```{r biplot-geological-structure}
-
+```{r biplot-geological-structure and region, fig.height=4, fig.width=6}
 ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1,
          groups = interaction(data_spa_waters_classes$Geological.structure), ellipse = TRUE)
-```
-
-Biplot grouped by Region.
-
-```{r biplot-region}
 
 ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1,
          groups = interaction(data_spa_waters_classes$Region), ellipse = TRUE)
@@ -295,9 +382,11 @@ ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1,
 
 From the biplot of PC1 and PC2, we can read that PC1's loadings are all negative, except for pH, and the loadings enter more or less with equal weight for K+, HCO3-, EC, and Na,  and with less weight for SiO2, Cl, SO4.2-, Ca2+, and Mg2+, while pH has a similar value of a positive loading to these; temperature is almost equal to 0. In PC2, Mg2+ and Ca2+ dominate with positive loadings, while temperature enters with similar weight negatively. pH is still entering with notable negative loading, while the other variables are lower, both positive and negative. The groupings are shown for both geological structures and by regions. Grouping by geological structure on the PC1 PC2 biplot seems more visible, while by region it is more dispersed.
 
-```{r biplot-pc1-pc3}
+\newpage
 
-ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1, circle = TRUE, choices = c(1, 3))
+```{r biplot-pc1-pc3, fig.height=4, fig.width=6}
+
+##ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1, circle = TRUE, choices = c(1, 3))
 
 ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1, choices = c(1, 3),
          groups = interaction(data_spa_waters_classes$Geological.structure), ellipse = TRUE)
@@ -310,19 +399,40 @@ From the biplot between PC1 and PC3, we can read that in PC3, the largest negati
 
 Factor Analysis
 
-FA 1
+```{r factanal-pvalues}
+
+n <- 4
+pvalues <- rep(0, n)
+
+for (f in 1:n)
+  pvalues[f] <- factanal(data_spa_waters_raw, factors = f)$PVAL
+
+ggplot(data.frame(pvalues), aes(x = 1:n, y = pvalues)) +
+  geom_point(size = 3) +
+  xlab("Number of factors")
+```
 
 For the Factor Analysis, 4 factors are selected to be modelled. With 4 factors, using the R built-in factanal function, 64.9% of the total variance is captured, slightly less than with PCA.
 
-FA2
+```{r factanal-diagram}
+
+fa.diagram(factanal(data_spa_waters_raw, factors = 4)$loadings, digits = 3)
+```
 
 From the factor diagram, we can see that the first factor is associated mainly with HCO3- and K+, while Factor 2 contains TS and EC. Factor 3 captures Cl-, Na+ and Mg2+ and Factor 4 is dominated by SO4_2- with a smaller loading of temperature.
 
-FA3
+```{r principal-varimax}
+
+fa_result <- principal(data_spa_waters_raw, nfactors = 4, rotate = "varimax")
+
+# Check variance accounted for by each rotated factor
+
+fa.diagram(principal(data_spa_waters_raw, nfactors = 4, rotate = "varimax")$loadings, digits = 3)
+```
 
 Factor Analysis with Principal Components returned slightly different results, while maintaining a 74.73% total variance; here, Factor 1 is associated with TS and EC, with large loadings and a moderate loading of HCO3-; Factor 2 is associated with Ca2+ with the highest loading and Mg2+, K+, and pH with moderate loadings. Factor 3 includes temperature, SiO2 and SO4_2- with equally moderate loadings, while Factor 4 captures Na+ and Cl- contents. These loadings are the closest to the ones described in the paper. They also report that their PC1 was positively correlated with EC, TS and HCO3- as seen on our factor diagram. Equally, they report that their PC2 resembles the “hardness” component of the minerals, meaning high positive loadings from Mg2+ and Ca2+, just as our Factor 2. Their other two components describe the radiology data, which we do not have, but our two other factors also add important indications. Factor 3 is associated with the temperature and silica content of the water, which are also linked, as well as Factor 4 tells us about the dissolved salt in the water associated with Cl- and Na+.
 
-```{r clustering-kmeans geom}
+```{r clustering-kmeans geom, fig.height=4, fig.width=6}
 
 # Build the scores data frame
 scores_df <- as.data.frame(PCA.data_spa_waters_raw$x)
@@ -360,7 +470,7 @@ ggplot(scores_df, aes(x = PC1, y = PC2)) +
         legend.background = element_rect(color = "black", linewidth = 0.3))
 ```
 
-```{r clustering-kmeans region}
+```{r clustering-kmeans region, fig.height=4, fig.width=6}
 
 # Build the scores data frame
 scores_df <- as.data.frame(PCA.data_spa_waters_raw$x)
@@ -407,15 +517,9 @@ When we compare by geological structures, we can see that samples from Karstic t
 Dendogram
 
 ## Discussion
-
-Can you improve the paper’s results using Factor Analysis in terms of model
-quality with parsimony?
-
 Our factor analysis identified 4 factors, and explained 64.9% of the total variance. These results are the same as theirs in terms of parsimony, but have less explained variance. So, our findings do not improve the model quality in terms of parsimony or explained variance. It is worth noting the factors identified by our factor analysis are more interpretable compared to the principal components identified through their PCA, as there is a clearer understanding of the relationships between the variables.
 
 Are the groups identified by the dendrogram consistent with changes in the
 linkage and distance?
 
-=======
-## Results and Discussion
 
