@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r echo=FALSE}
-data <- read.csv("Data.csv", header=TRUE)
+data <- read.csv(file.path("..","Data","Data.csv"), header=TRUE)
 names(data) <- c("No.", "Name", "Temp", 
               "pH",
               "EC", 

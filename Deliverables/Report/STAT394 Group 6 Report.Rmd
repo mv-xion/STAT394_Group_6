@@ -1,5 +1,5 @@
 ---
-title: "An Analysis on Tanaskovi'c et al. (2012)"
+title: "A Multivariate Analysis on Tanaskovi'c et al. (2012)"
 author: "STAT394 Group 6"
 output: pdf_document
 bibliography: bibliography.bib
@@ -13,7 +13,7 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE,echo = FALSE)
 
 ```{r install-packages, eval=FALSE}
 
-install.packages(c("reshape2", "ggplot2", "ggcorrplot", "GGally", "psych", "ggnewscale","rstatix"))
+install.packages(c("reshape2", "ggplot2", "ggcorrplot", "GGally", "psych", "ggnewscale","rstatix", "tidyverse","dendextend", "car", "here", "pander"))
 install.packages("devtools")
 devtools::install_github("vqv/ggbiplot")
 
@@ -33,6 +33,8 @@ library(ggbiplot)
 library(psych)
 library(ggnewscale)
 library(pander)
+library(tidyverse)
+library(dendextend)
 
 set.seed(123)
 ```
@@ -111,7 +113,7 @@ Based on the 12 hydrological data provided in the paper, our objective was to pe
 
 Since we were working with a reduced dataset compared to the paper by @tanaskovic_multivariate_2012, our other objective was to compare our results with the ones they got and see if we can observe similar relationships between the geological origins of spa waters and their hydrochemical compositions, based solely on considering the chemical properties.
 
-\newpage
+
 
 # Data and Methodology  
 
@@ -128,7 +130,9 @@ Mahalanobis distance was calculated from the multivariate mean and standard devi
 
 Boxplots were used to show the chemical composition of the samples across the different geological structures and the different regions. 
 
-In order to make the data more interpretable, Principal component analysis (PCA) and Factor Analysis (FA) were used to transform the data into a smaller dimension. Biplots and factor diagrams were used to facilitate the analysis of employing these dimensionality reduction techniques and interpret the structure of the data. Principal component analysis is a data transformation using linear combinations of uncorrelated variables to capture the maximum variance available in the dataset using eigenvalue decomposition. Data was standardised through zero-centring and scaling. This ensures every variable has a mean of zero and a standard deviation of one. FA finds relationships between variables and forms factors comprised of the related variables. By grouping related variables, factor analysis may aid with interpretation of the data. FA with Varimax transformation was used to reduce the number of variable loadings per Factor and favour a reduced number of variables with higher loadings. This helps uncover psychological senses behind the data and the factors could be understood through knowledge of the field. For further analysis of the data, we also employ k-means clustering and Hierarchical Cluster Analysis (HCA) and compare our results with @tanaskovic_multivariate_2012.
+In order to make the data more interpretable, Principal component analysis (PCA) and Factor Analysis (FA) were used to transform the data into a smaller dimension. Biplots and factor diagrams were used to facilitate the analysis of employing these dimensionality reduction techniques and interpret the structure of the data. Principal component analysis is a data transformation using linear combinations of uncorrelated variables to capture the maximum variance available in the dataset using eigenvalue decomposition. Data was standardised through zero-centring and scaling. This ensures every variable has a mean of zero and a standard deviation of one.
+
+FA finds relationships between variables and forms factors comprised of the related variables. By grouping related variables, factor analysis may aid with interpretation of the data. FA with Varimax transformation was used to reduce the number of variable loadings per Factor and favour a reduced number of variables with higher loadings. This helps uncover psychological senses behind the data and the factors could be understood through knowledge of the field. For further analysis of the data, we also employ k-means clustering and Hierarchical Cluster Analysis (HCA) and compare our results with @tanaskovic_multivariate_2012.
 
 
 \newpage
@@ -143,7 +147,7 @@ corr_mat = round(cor(X), 3)
 corr_mat
 ```
 
-Correlation coefficients can be investigated to understand the relationships between two variables. Weak correlations between variables have values close to 0, while values close to 1 or -1 indicate strong relationships. Overall correlations between variables are mostly weak or weakly moderate. Variables that are highly correlated are TS and EC at 0.960, Na+ and HCO3- at 0.877 and HCO3+ and K+ at 0.827. Subject knowledge of geography could be used to further interpret these correlations.
+Correlation coefficients can be investigated to understand the relationships between two variables. Weak correlations between variables have values close to 0, while values close to 1 or -1 indicate strong relationships. Overall correlations between variables are mostly weak or weakly moderate. Variables that are highly correlated are TS and EC at 0.960, Na+ and $HCO_3^-$ at 0.877 and HCO3+ and $K^+$ at 0.827. Subject knowledge of geography could be used to further interpret these correlations.
 
 
 ```{r correlogram}
@@ -160,8 +164,11 @@ ggpairs(data_spa_waters_raw)
 ```
 
 A pairs plot shows us both the distribution of each variable on the diagonal and the correlation between each pair of variables. Significant correlations are marked with stars on the pairs plot. The correlation between variables can also be represented on a correlogram, which highlights correlations by size and colour for easier interpretability.
-The variables exhibit correlations ranging from moderate negative correlation, the lowest being -0.48, to high positive correlations, the highest reaching 0.96. The highest correlation is between EC and TS, while Na+ also shows moderate to high correlations with HCO3-, Cl-, K+, EC and TS (0.88, 0.67,0.65 and 0.59, respectively). Apart from Na+, HCO3- shows high correlations with K+, EC and TS (0.83, 0.62, 0.53). Weak to moderate negative associations are exhibited between pH and Mg2+, K+, and Ca2+ (-0.48, -0.46,-0.45). T is weakly positively correlated with SiO2 and negatively correlated with Ca2+ and Mg2+, with similar values around +-0.36.
-Moreover, we can see that some of the variables seem to resemble a truncated normal distribution, like the temperature, pH, EC, TS and SiO2, while others have drastically different distributions.
+
+The variables exhibit correlations ranging from moderate negative correlation, the lowest being -0.48, to high positive correlations, the highest reaching 0.96. The highest correlation is between EC and TS, while $Na^+$ also shows moderate to high correlations with $HCO_3^-$, $Cl^-$, $K^+$, EC and TS (0.88, 0.67,0.65 and 0.59, respectively). Apart from $Na^+$, $HCO_3^-$ shows high correlations with $K^+$, EC and TS (0.83, 0.62, 0.53). Weak to moderate negative associations are exhibited between pH and $Mg^{2+}$, $K^+$, and $Ca^{2+}$ (-0.48, -0.46,-0.45). T is weakly positively correlated with $SiO_2$ and negatively correlated with $Ca^{2+}$ and $Mg^{2+}$, with similar values around +-0.36.
+
+Moreover, we can see that some of the variables seem to resemble a truncated normal distribution, like the temperature, pH, EC, TS and $SiO_2$, while others have drastically different distributions.
+
 
 ## 3.2 Normality test
 
@@ -289,7 +296,7 @@ ggplot(data.frame(dM), aes(x = dM)) +
   ylab("Histogram and density")
 ```
 
-The mahalanobis distance graph shows 10 past the first two thresholds, with five of these being past all three. These observations are surprising assuming a multivariate normal distribution. The points are observations: 1, 2, 4, 15, 16, 23, 24, 28, 29 and 30.
+The mahalanobis distance graph shows 10 surprising observations past the first two thresholds. with five of these being past all three. The points are observations: 1, 2, 4, 15, 16, 23, 24, 28, 29 and 30.
 
 ```{r surprise-classification}
 
@@ -388,8 +395,7 @@ ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1,
          groups = interaction(data_spa_waters_classes$Region), ellipse = TRUE)
 ```
 
-Factor loadings from the PCA show how much each original variable contributes to each principal component. From the biplot of PC1 and PC2, we can read that PC1's loadings are all negative, except for pH, and the loadings enter more or less with equal weight for K+, HCO3-, EC, TS and Na+,  and with less weight for SiO2, Cl, SO4.2-, Ca2+, and Mg2+, while pH has a similar value of a positive loading to these; temperature is almost equal to 0. In PC2, Mg2+ and Ca2+ dominate with positive loadings, while temperature enters with similar weight negatively. pH is still entering with notable negative loading, while the other variables are lower, both positive and negative. The groupings are shown for both geological structures and by regions. Grouping by geological structure on the PC1 PC2 biplot seems more visible, while by region it is more dispersed.
-
+Factor loadings from the PCA show how much each original variable contributes to each principal component. From the biplot of PC1 and PC2, we can read that PC1's loadings are all negative, except for pH, and the loadings enter more or less with equal weight for $K^+$, $HCO_3^-$, EC, TS and $Na^+$,  and with less weight for SiO2, Cl, SO4.2-,$Ca^{2+}$, and $Mg^{2+}$, while pH has a similar value of a positive loading to these; temperature is almost equal to 0. In PC2, $Mg^{2+}$ and $Ca^{2+}$ dominate with positive loadings, while temperature enters with similar weight negatively. pH is still entering with notable negative loading, while the other variables are lower, both positive and negative. The groupings are shown for both geological structures and by regions. Grouping by geological structure on the PC1 PC2 biplot seems more visible, while by region it is more dispersed.
 
 \newpage
 
@@ -404,9 +410,10 @@ ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1, choices = c(1, 3
          groups = interaction(data_spa_waters_classes$Region), ellipse = TRUE)
 ```
 
-From the biplot between PC1 and PC3, we can read that in PC3, the largest negative loadings come from SiO2 and SO4_2-, and positive loadings from Cl-, notable loadings enter from temperature negatively, while all other variables enter with a lower loading, both positive and negative.
+From the biplot between PC1 and PC3, we can read that in PC3, the largest negative loadings come from $SiO_2$ and $SO_4^{2-}$, and positive loadings from $Cl^-$, notable loadings enter from temperature negatively, while all other variables enter with a lower loading, both positive and negative.
 
-PC4 is moderately positively associated with EC, TS and SIO2; and moderately negatively associated with Ca2+ and Cl-.
+PC4 is moderately positively associated with EC, TS and $SiO_2$; and moderately negatively associated with Ca2+ and $Cl^-$.
+
 
 ## 3.6 Factor Analysis
 
@@ -430,7 +437,7 @@ faresult = factanal(X, factors=4)
 faresult
 ```
 
-For the Factor Analysis, 4 factors are selected to be modelled. With 4 factors, using the R built-in factanal function.  Four factors explain 64.9% of variation in the data. No single factor explains a large portion of variation. Factor 1 explains 22.9% of the variation, this is quite a low value for the factor explaining the most variation. Factor loadings can be interpreted to see how strongly each variable is associated with the factor. Factor 1 strongly explains the variation of k+, explaining 82.5% and HCO-3, explaining 89.3% of variation. Factor 1 also explains 65.2% of variation in Na+ and smaller amounts of other variables Factor 2 strongly explains the variation of EC, explaining 92.4% of variation and TS explaining 96.8% of variation. Factor 3 strongly explains variation of Cl-, explaining 83.0% of variation, and moderately explains variation of Na+ explaining 68.1% of variation. Notably Na+ and Cl- are both components of salt, sodium chloride NaCl. Factor 3 could possible be identified as representing salt, although subject knowledge of geology would be required to confirm this. Factor 4 strongly explains variation of SO2-4, explaining 96.9% of variation. Overall subject knowledge of geography is required for further interpretation of the factors.
+For the Factor Analysis, 4 factors are selected to be modelled. With 4 factors, using the R built-in factanal function.  Four factors explain 64.9% of variation in the data. No single factor explains a large portion of variation. Factor 1 explains 22.9% of the variation, this is quite a low value for the factor explaining the most variation. Factor loadings can be interpreted to see how strongly each variable is associated with the factor. Factor 1 strongly explains the variation of $K^+$, explaining 82.5% and $HCO_3^-$, explaining 89.3% of variation. Factor 1 also explains 65.2% of variation in $Na^+$ and smaller amounts of other variables Factor 2 strongly explains the variation of EC, explaining 92.4% of variation and TS explaining 96.8% of variation. Factor 3 strongly explains variation of $Cl^-$, explaining 83.0% of variation, and moderately explains variation of $Na^+$ explaining 68.1% of variation. Notably $Na^+$ and $Cl^-$ are both components of salt, sodium chloride NaCl. Factor 3 could possible be identified as representing salt, although subject knowledge of geology would be required to confirm this. Factor 4 strongly explains variation of $SO_4^{2-}$, explaining 96.9% of variation. Overall subject knowledge of geography is required for further interpretation of the factors.
 
 
 ```{r factanal-diagram}
@@ -438,7 +445,8 @@ For the Factor Analysis, 4 factors are selected to be modelled. With 4 factors, 
 fa.diagram(factanal(data_spa_waters_raw, factors = 4)$loadings, digits = 3)
 ```
 
-From the factor diagram, we can see that the first factor is associated mainly with HCO3- and K+, while Factor 2 contains TS and EC. Factor 3 captures Cl-, Na+ and Mg2+ and Factor 4 is dominated by SO4_2- with a smaller loading of temperature.
+From the factor diagram, we can see that the first factor is associated mainly with $HCO_3^-$ and $K^+$, while Factor 2 contains TS and EC. Factor 3 captures $Cl^-$, $Na^+$ and $Mg^{2+}$ and Factor 4 is dominated by $SO_4^{2-}$ with a smaller loading of temperature.
+
 
 ```{r principal-varimax}
 
@@ -448,8 +456,7 @@ fa_result <- principal(data_spa_waters_raw, nfactors = 4, rotate = "varimax")
 
 fa.diagram(principal(data_spa_waters_raw, nfactors = 4, rotate = "varimax")$loadings, digits = 3)
 ```
-
-Factor Analysis with Principal Components returned slightly different results, while maintaining a 74.73% total variance; here, Factor 1 is associated with TS and EC, with large loadings and a moderate loading of HCO3-; Factor 2 is associated with Ca2+ with the highest loading and Mg2+, K+, and pH with moderate loadings. Factor 3 includes temperature, SiO2 and SO4_2- with equally moderate loadings, while Factor 4 captures Na+ and Cl- contents. These loadings are the closest to the ones described in the paper. They also report that their PC1 was positively correlated with EC, TS and HCO3- as seen on our factor diagram. Equally, they report that their PC2 resembles the “hardness” component of the minerals, meaning high positive loadings from Mg2+ and Ca2+, just as our Factor 2. Their other two components describe the radiology data, which we do not have, but our two other factors also add important indications. Factor 3 is associated with the temperature and silica content of the water, which are also linked, as well as Factor 4 tells us about the dissolved salt in the water associated with Cl- and Na+.
+Factor Analysis with Principal Components returned slightly different results, while maintaining a 74.73% total variance; here, Factor 1 is associated with TS and EC, with large loadings and a moderate loading of $HCO_3^-$. Factor 2 is associated with $Ca^{2+}$ with the highest loading and $Mg^{2+}$, $K^+$, and pH with moderate loadings. Factor 3 includes temperature, $SiO_2$ and $SO_4^{2-}$ with equally moderate loadings, while Factor 4 captures $Na^+$ and $Cl^-$ contents. These loadings are the closest to the ones described in the paper. They also report that their PC1 was positively correlated with EC, TS and $HCO_3^-$ as seen on our factor diagram. Equally, they report that their PC2 resembles the "hardness" component of the minerals, meaning high positive loadings from $Mg^{2+}$ and $Ca^{2+}$, just as our Factor 2. Their other two components describe the radiology data, which we do not have, but our two other factors also add important indications. Factor 3 is associated with the temperature and silica content of the water, which are also linked, as well as Factor 4 tells us about the dissolved salt in the water associated with $Cl^-$ and $Na^+$.
 
 ## 3.6 Cluster analysis
 
@@ -536,6 +543,76 @@ When we compare by geological structures, we can see that samples from Karstic t
 
 ## 3.7 Hierarchical Cluster Analysis
 
+```{r echo=FALSE}
+#Hierachical Clustering
+dist <- dist(X[ , c(4:8)] , diag=TRUE)
+hc <- hclust(dist)
+```
+
+```{r dendogram 1}
+#Dendrogram
+dhc <- as.dendrogram(hc)                        
+
+#Dendrogram colours
+i=0
+colLab<<-function(n){
+  if(is.leaf(n)){
+    a=attributes(n)
+    m=match(attributes(n)$label,data[,1])
+    
+    #Zone Colours
+    zone=data[m,16];
+    if(zone=="Pannonian Basin"){col_zone="blue"};
+    if(zone=="Vardar Zone"){col_zone="red"}; 
+    if(zone=="Serbo-Macedonian Massif"){col_zone="darkgreen"}; 
+    if(zone=="Carpatho-Balkans"){col_zone="purple"}
+    
+    #Structure Colours
+    structure=data[m,15];
+    if(structure=="Hydrogeological basin"){col_structure="lightblue"};
+    if(structure=="Karstic terrains"){col_structure="pink"};
+    if(structure=="Volcanogenic massifs"){col_structure="lightgreen"};
+    if(structure=="Metamorphic regions"){col_structure="plum"} 
+    
+    #Leaf attributes
+    attr(n,"nodePar")<-c(a$nodePar,list(cex=1.5,lab.cex=1,pch=20,col=col_structure,lab.col=col_zone,lab.font=1,lab.cex=1))
+  }
+  return(n)
+}
+
+dL <- dendrapply(dhc, colLab)
+
+#Plot
+plot(dL , main="Title")
+
+#Legend for zones
+legend("topleft",
+       legend = c("Pannonian Basin" , "Vardar Zone" , "Serbo-Macedonian Massif" , "Carpatho-Balkans"), 
+       col = c("red", "blue" , "Darkgreen", "Purple"),
+       pch = c(4,4,4,4), bty = "n",  pt.cex = 1.5, cex = 0.8,
+       text.col = "black", horiz = FALSE,
+       inset= c(0,0))
+
+#Legend for structures      
+legend("left",
+       legend = c("Hydrogeological basin", "Karstic terrains", "Volcanogenic massifs", "Metamorphic regions"), 
+       col = c("lightblue","pink", "lightgreen", "plum"),
+       pch = c(20,20,20,20), bty = "n",  pt.cex = 1.5, cex = 0.8,
+       text.col = "black", horiz = FALSE,
+       inset= c(0,0))
+
+```
+
+
+```{r dendogram 2}
+# Color in function of the cluster
+par(mar=c(1,1,1,7))
+dhc %>%
+  set("labels_col", value = c("red", "blue" , "Darkgreen", "Purple"), k=4) %>%
+  set("branches_k_color", value = c("red", "blue" , "Darkgreen", "Purple"), k = 4) %>%
+  plot(horiz=FALSE, axes=FALSE)
+```
+
 Hierarchical cluster analysis was performed on the data and used to group the spa sites. Visualisation is by dendrogram. The more closely related the sites are, the lower the connection of branches on the dendrogram.
 
 One dendrogram colours the spa sites by geotectonic zone and geological structure. This visualises any possible relationship between these variables and spa sites. There are no relationships obviously present. There may possibly be some slight groupings of Serbo-Macedonian massifs on the left and right sides of the dendrogram. The grouping between sites 16 to 20 seems to contain mostly volcanic massifs.
@@ -543,7 +620,12 @@ One dendrogram colours the spa sites by geotectonic zone and geological structur
 The other dendrogram is coloured to depict four clusters of spa sites. These clusters do not contain the same number of sites. The green cluster contains only site 4 whereas the blue cluster contains 18 sites. Hierarchical clustering works by joining two sites that are closest in distance into a cluster. This process repeats joining sites and clusters by distance. The four clusters were created by ‘cutting’ the dendrogram where there are four lines, and therefore four clusters present. The green cluster containing only one site suggests that site is very different to the other sites in the study.
 
 
+\newpage
+
 ## Discussion
+
+- Can you improve the paper’s results using Factor Analysis in terms of model quality with parsimony?
+
 
 Our factor analysis identified 4 factors, and explained 64.9% of the total variance. A goal of ours throughout this investigation was to see if we could improve the principal component analysis done by Tanaskovic using factor analysis in terms of model quality with parsimony. In the 2012 paper, their “PCA reduced the variables to four latent factors which explained 74.2% of the sampling variance responsible for the data structure.” The first component explained 37.5% of this, and they noted it could be conditionally named as the “mineralisation or residence time” factor due to the contribution of specific variables. The second (the “hardness” component), third, and fourth principal components accounted for less variation: between 10.5% and 13.8%. 
 
@@ -556,6 +638,12 @@ An important note before we completely write-off factor analysis is that it does
 So the answer is that we can not improve on Tanaskovic’s PCA but we can improve interpretability while retaining parsimony (we get this interpretation advantage regardless of our fit to the data).
 These results are the same as theirs in terms of parsimony, but have less explained variance. So, our findings do not improve the model quality in terms of parsimony or explained variance. It is worth noting the factors identified by our factor analysis are more interpretable compared to the principal components identified through their PCA, as there is a clearer understanding of the relationships between the variables.
 
+- Are the groups identified by the dendrogram consistent with changes in the
+linkage and distance?
+
+The groups identified by the dendrogram are fairly consistent with the changes in linkage and distance. The green and purple groups have a higher merge point, suggesting they are more dissimilar. The red and blue groups on the other hand have a lower merge point, meaning they are more similar to each other than the green and purple group. The final merge is a big jump from the two main branches which suggests the two branches identified before this are very dissimilar.
+
+\newpage
 
 # References
 
