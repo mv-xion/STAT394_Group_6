@@ -30,6 +30,8 @@ library(GGally)
 library(ggbiplot)
 library(psych)
 library(ggnewscale)
+
+set.seed(12345678)
 ```
 
 
@@ -611,7 +613,7 @@ var_explained <- (PCA.data_spa_waters_raw$sdev^2 / sum(PCA.data_spa_waters_raw$s
 # 3. Run clustering on the PC scores (choose number of clusters, e.g. 3)
 set.seed(123)
 k <- 2  # adjust based on your data
-km <- kmeans(scores_df[, c("PC1", "PC2")], centers = k)
+km <- kmeans(scores_df[, c("PC1", "PC2")], centers = k, nstart=20)
 scores_df$Cluster <- factor(km$cluster)
 
 # 4. Dynamic color/shape mapping for Group
