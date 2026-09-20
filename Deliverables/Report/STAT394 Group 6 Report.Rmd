@@ -2,6 +2,7 @@
 title: "An Analysis on Tanaskovi'c et al. (2012)"
 author: "STAT394 Group 6"
 output: pdf_document
+bibliography: bibliography.bib
 indent: True
 fontsize: 12pt
 ---
@@ -98,18 +99,17 @@ as.numeric(hydroclean$Ca2.)->hydroclean$Ca2.
 
 # Introduction
 
-Serbia is located in Eastern Europe on the Balkan Peninsula. Many thermal springs can be found in Serbia. These waters are spread across different regions of the country, originating from various geological structures shaped by the region's complex geologic history. Waters from different geological origins and regions have different groundwater chemical properties due to different hydrochemical processes. (https://worldgeothermal.org/pdf/IGAstandard/WGC/2010/0164.pdf). 
+Serbia is located in Eastern Europe on the Balkan Peninsula. Many thermal springs can be found in Serbia. These waters are spread across different regions of the country, originating from various geological structures shaped by the region's complex geologic history. Waters from different geological origins and regions have different groundwater chemical properties due to different hydrochemical processes.[@martinovic2010serbia] 
+@tanaskovic_multivariate_2012 statistically investigated the chemical and radioactive composition of spa water from different regions in Serbia. They took samples from spa waters from 30 different locations across Serbia, measuring 12 variables related to the hydrochemical processes and 6 related to radioactive isotopes. They analysed the data using multivariate statistical analysis to see if they could establish relationships and classify spa waters based on their chemical and radiological composition and geotectonic region. They analysed the data with a Pearson Correlation Matrix, Principal Component Analysis, Factor Analysis and Hierarchical Cluster Analysis. 
 
-Tanasković et al. (2012) statistically investigated the chemical and radioactive composition of spa water from different regions in Serbia. They took samples from spa waters from 30 different locations across Serbia, measuring 12 variables related to the hydrochemical processes and 6 related to radioactive isotopes. They analysed the data using multivariate statistical analysis to see if they could establish relationships and classify spa waters based on their chemical and radiological composition and geotectonic region. They analysed the data with a Pearson Correlation Matrix, Principal Component Analysis (PCA), Factor Analysis and Hierarchical Cluster Analysis (HCA). 
-
-The 18 variables related to the spa water’s composition were loaded into four principal components, which contained 74.2% of the variation. Two of these were linked to variation in hydrochemical composition, and the other two related to radiological composition. The cluster analysis classified the waters into 4 main groups and 8 subgroups based on the similarity of water samples. From these results they were able to conclude that the geotectonic location of the spa water was a major factor in their composition (Tanasković et al. (2012)).
+The 18 variables related to the spa water’s composition were loaded into four principal components, which contained 74.2% of the variation. Two of these were linked to variation in hydrochemical composition, and the other two related to radiological composition. The cluster analysis classified the waters into 4 main groups and 8 subgroups based on the similarity of water samples. From these results they were able to conclude that the geotectonic location of the spa water was a major factor in their composition [@tanaskovic_multivariate_2012 ].
 We aimed to undertake a similar analysis of the data, but as we only had access to the hydrochemical data of the samples and the referred radiological data is not publicly available, we were unable to replicate their analysis.
 Based on the 12 hydrological data provided in the paper, our objective was to perform both a quantitative  and qualitative  analysis of the data in order to answer the following questions:
 
 - Can you improve the paper’s results using Factor Analysis in terms of model quality with parsimony? 
 - Are the groups identified by the dendrogram consistent with changes in the linkage and distance? 
 
-Since we were working with a reduced dataset compared to the paper by Tanasković et al. (2012), our other objective was to compare our results with the ones they got and see if we can observe similar relationships between the geological origins of spa waters and their hydrochemical compositions, based solely on considering the chemical properties.
+Since we were working with a reduced dataset compared to the paper by @tanaskovic_multivariate_2012, our other objective was to compare our results with the ones they got and see if we can observe similar relationships between the geological origins of spa waters and their hydrochemical compositions, based solely on considering the chemical properties.
 
 \newpage
 
@@ -117,32 +117,34 @@ Since we were working with a reduced dataset compared to the paper by Tanaskovi�
 
 ## Data: 
 
-The data used for our study were taken from Tanasković et al. (2012), Table 1, which includes 12 hydrochemical variables typically measured for water mineralogy assessment (https://www.cell.com/heliyon/fulltext/S2405-8440(23)04561-9), namely the outflowing temperature (T), pH, total solids content (TS), electrical conductivity (EC) and ions ($HCO_3^-$, $Ca^{2+}$, $Mg^{2+}{}$, $Na^+$, $K^+$, $Cl^-$, $SO_4^{2-}$ and $SiO_2$), obtained from 30 samples across different regions of Serbia. The data also include a labelling of Geological structure, which we use in our analysis. To complete our data, we have added an additional column, which labels the data based on the sampling location by different regions given by Tanasković et al. (2012) in Figure 1.
+The data used for our study were taken from @tanaskovic_multivariate_2012 , Table 1, which includes 12 hydrochemical variables typically measured for water mineralogy assessment [@chalise_water_2023], namely the outflowing temperature (T), pH, total solids content (TS), electrical conductivity (EC) and ions ($HCO_3^-$, $Ca^{2+}$, $Mg^{2+}{}$, $Na^+$, $K^+$, $Cl^-$, $SO_4^{2-}$ and $SiO_2$), obtained from 30 samples across different regions of Serbia. The data also includes a labeling of Geological structure, which we use in our analysis. To complete our data, we have added an additional column, which labels the data based on the sampling location by different regions given by @tanaskovic_multivariate_2012 in Figure 1.
 
 ## Methods:
 
-The multivariate analysis of the data was done with the freely available RStudio in the R software, developed locally at the University of Auckland in New Zealand (ref). 
-
-Quantitative - Cathrine
-
-For the qualitative analysis, the chemical data were studied using a Pearson Correlation Matrix of the data. Shapiro-Wilk’s tests were used to test whether each of our 12 variables individually followed a normal distribution with a significance level of 0.05. QQ-plots and Histograms were also used alongside these tests to check univariate normality for each of our variables. A Mardia’s test and a Henze-Zirkler test were carried out with a significance level of 0.05 to check whether our variables jointly followed a multivariate normal distribution. 
-
+The multivariate analysis of the data was done with the freely available RStudio in the R software, developed locally at the University of Auckland in New Zealand [@R_2021]. 
+For the analysis, the chemical data were studied first, using correlation matrix, created using Pearsons correlation. Shapiro-Wilk’s tests were used to test whether each of our 12 variables individually followed a normal distribution with a significance level of 0.05. QQ-plots and Histograms were also used alongside these tests to check univariate normality for each of our variables. A Mardia’s test and a Henze-Zirkler test were carried out with a significance level of 0.05 to check whether our variables jointly followed a multivariate normal distribution. 
 
 Mahalanobis distance was calculated from the multivariate mean and standard deviation to assess the consistency of the samples. For the validity of the Mahalanobis distance, we initially transformed most of the variables using individual box-cox transformations with differing lambda values. Results were also analysed with a pair plot for the different categories found by Mahalanobis distance.
 
-Boxplots were used to show the chemical composition of the samples across the different geological structures and the different regions. In order to make the data more interpretable, PCA and FA were used to transform the data into a smaller dimension. Biplots and factor diagrams were used to facilitate the analysis of employing these dimensionality reduction techniques and interpret the structure of the data. Principal Components capture the maximum variance available in the dataset by transforming the data using eigenvalue decomposition. We use factor analysis with Varimax transformation to reduce the number of variable loadings per Factor and favour a reduced number of variables with higher loadings. This helps uncover psychological senses behind the data. For further analysis of the data, we also employ k-means clustering and HCA and compare our results with Tanaskovic et al.(2012).
+Boxplots were used to show the chemical composition of the samples across the different geological structures and the different regions. 
+
+In order to make the data more interpretable, Principal component analysis (PCA) and Factor Analysis (FA) were used to transform the data into a smaller dimension. Biplots and factor diagrams were used to facilitate the analysis of employing these dimensionality reduction techniques and interpret the structure of the data. Principal component analysis is a data transformation using linear combinations of uncorrelated variables to capture the maximum variance available in the dataset using eigenvalue decomposition. Data was standardised through zero-centring and scaling. This ensures every variable has a mean of zero and a standard deviation of one. FA finds relationships between variables and forms factors comprised of the related variables. By grouping related variables, factor analysis may aid with interpretation of the data. FA with Varimax transformation was used to reduce the number of variable loadings per Factor and favour a reduced number of variables with higher loadings. This helps uncover psychological senses behind the data and the factors could be understood through knowledge of the field. For further analysis of the data, we also employ k-means clustering and Hierarchical Cluster Analysis (HCA) and compare our results with @tanaskovic_multivariate_2012.
 
 
 \newpage
 
 # Results and Discussion
 
-## 3.1 Data analysis
+## 3.1 Correlations analysis
 
-Principal component analysis (PCA) was used to analyse the data. Principal component analysis is a data transformation using linear combinations of uncorrelated variables. Data was standardised through zero-centring and scaling. This ensures every variable has a mean of zero and a standard deviation of one. Principal component analysis was used and the principal components were calculated.  The first principal component explains 35.08% of variation in the data, using more principal components increases the amount explained. To decide how many principal components to select, a scree plot was used. Looking at the scree plot, 4 principal components were chosen as this is where the knee of the plot is. Four principal components explain 74.727% of variation in the data, just under three quarters.
-Factor loadings from the PCA show how much each original variable contributes to each principal component.  Principal component 1 is moderately, negatively associated with NA+, HCO-3, k+, electrical conductivity and TS. Principal component 2 is positively correlated with CA2+ and Mg2+. Principal component 3 is moderately negatively associated with temperature, SiO2, SO2-4 and Cl-. Principal component 4 is moderately positively associated with EC, TS and SIO2; and moderately negatively associated with Ca2+ and Cl-.  
+```{r corr_mx}
+#Correlation Matrix
+corr_mat = round(cor(X), 3) 
+corr_mat
+```
 
-## 3.2 Correlations analysis
+Correlation coefficients can be investigated to understand the relationships between two variables. Weak correlations between variables have values close to 0, while values close to 1 or -1 indicate strong relationships. Overall correlations between variables are mostly weak or weakly moderate. Variables that are highly correlated are TS and EC at 0.960, Na+ and HCO3- at 0.877 and HCO3+ and K+ at 0.827. Subject knowledge of geography could be used to further interpret these correlations.
+
 
 ```{r correlogram}
 
@@ -160,6 +162,8 @@ ggpairs(data_spa_waters_raw)
 A pairs plot shows us both the distribution of each variable on the diagonal and the correlation between each pair of variables. Significant correlations are marked with stars on the pairs plot. The correlation between variables can also be represented on a correlogram, which highlights correlations by size and colour for easier interpretability.
 The variables exhibit correlations ranging from moderate negative correlation, the lowest being -0.48, to high positive correlations, the highest reaching 0.96. The highest correlation is between EC and TS, while Na+ also shows moderate to high correlations with HCO3-, Cl-, K+, EC and TS (0.88, 0.67,0.65 and 0.59, respectively). Apart from Na+, HCO3- shows high correlations with K+, EC and TS (0.83, 0.62, 0.53). Weak to moderate negative associations are exhibited between pH and Mg2+, K+, and Ca2+ (-0.48, -0.46,-0.45). T is weakly positively correlated with SiO2 and negatively correlated with Ca2+ and Mg2+, with similar values around +-0.36.
 Moreover, we can see that some of the variables seem to resemble a truncated normal distribution, like the temperature, pH, EC, TS and SiO2, while others have drastically different distributions.
+
+## 3.2 Normality test
 
 ```{r}
 #Histograms
@@ -239,20 +243,21 @@ pander(completed_tests,
        col.names = c("Variable", "Statistic", "p-value"))
 ```
 
-Tanaskovic et al. tested whether the individual variables followed a normal distribution before their analysis, and ultimately transformed the variables which failed the Shapiro-Wilk’s tests for normality ($H_0$: the data comes from a normally distributed population) using a Box-Cox transformation. We can also look at histograms and QQ-plots and apply the Shapiro-Wilk’s tests to check for ourselves if we have variables that follow a normal distribution.
+@tanaskovic_multivariate_2012 tested whether the individual variables followed a normal distribution before their analysis, and ultimately transformed the variables which failed the Shapiro-Wilk’s tests for normality ($H_0$: the data comes from a normally distributed population) using a Box-Cox transformation. We can also look at histograms and QQ-plots and apply the Shapiro-Wilk’s tests to check for ourselves if we have variables that follow a normal distribution.
 
 The histograms and QQ-plots show the individual variables deviate from normality to varying degrees. Understandably, for measures of chemical concentration, we see the measures are bounded below by zero and generally right-skewed, where most observations are relatively low with a few very high values. Obviously, these characteristics are different from the unbounded, symmetric normal distribution. 
-Just like Tanaskovic, our Shapiro-Wilk tests conclude non-normality for our variables. In fact, we find at the 0.05 level (the significance level chosen by Tanaskovic et al. (2012)), we reject the null hypothesis for every variable. For example, the chlorine ion measure (Cl.) gets a p-value of $1.566\times10^{-10} \ll 0.05$  so we reject the null hypothesis. For the Calcium ion variable (Ca2.), the p-value is 0.02344. Therefore, we reject the null hypothesis at the 0.05  significance level but we would fail to reject the null at the 0.01 significance level had we chosen it.
+Just like Tanaskovic, our Shapiro-Wilk tests conclude non-normality for our variables. In fact, we find at the 0.05 level (the significance level chosen by @tanaskovic_multivariate_2012), we reject the null hypothesis for every variable. For example, the chlorine ion measure ($Cl^-$) gets a p-value of $1.566\times10^{-10} \ll 0.05$  so we reject the null hypothesis. For the Calcium ion variable ($Ca^{2+}$), the p-value is 0.02344. Therefore, we reject the null hypothesis at the 0.05  significance level but we would fail to reject the null at the 0.01 significance level had we chosen it.
 
 The first we ran is Mardia's test (significance level 0.05), which formally tests whether multiple variables considered together follow a multivariate normal distribution. There are a few things we need to have for Mardia's test to work best. First, we want independent observations; we don't want extreme outliers, and we also want a reasonable sample size. In this case, we should only worry about the size of our sample; 30 observations is definitely small. Mardia's test has the null hypothesis that the data follows a multivariate normal distribution and looks at two features of the data: skewness and kurtosis. Essentially, it tests whether the overall distribution is asymmetric and whether the overall distribution has heavy or light tails.
-The p-value for skewness is $4.3\times10^{-20}$ and the p-value for kurtosis is $2.6\times10^{-6}$. Both of these p-values are less than 0.05, the significance level, and so we reject the null hypothesis and say there is evidence against the data following a multivariate normal distribution. https://metricgate.com/docs/mardias-test/ 
+The p-value for skewness is $4.3\times10^{-20}$ and the p-value for kurtosis is $2.6\times10^{-6}$. Both of these p-values are less than 0.05, the significance level, and so we reject the null hypothesis and say there is evidence against the data following a multivariate normal distribution.[@metricgate_mardias-test]
+
 ```{r}
 library(psych)
 mardia(hydroclean)
 ```
 
 These p-values are very small, but for extra confidence, especially given our small sample size, we can also do a Henze-Zirkler test, which has the null hypothesis that the data follows a multivariate normal distribution. We want independent observations and numeric variables, as it is designed for multiple variables jointly. The Henze-Zirkler test can be used for smaller data sets, but 30 observations is still small.
-We get a p-value of 0 from our Henze-Zirkler test and so reject the null hypothesis. So both Mardia's and the Henze-Zirkler test have evidence against multivariate normality. It would be safe to say that our data does not follow a multivariate normal distribution. https://metricgate.com/docs/henze-zirkler-test/ 
+We get a p-value of 0 from our Henze-Zirkler test and so reject the null hypothesis. So both Mardia's and the Henze-Zirkler test have evidence against multivariate normality. It would be safe to say that our data does not follow a multivariate normal distribution.[@metricgate2025henzezirkler]
 
 ## 3.3 Samples consistency analysis
 
@@ -305,7 +310,7 @@ ggpairs(data_spa_waters_raw, columns = 1:9,
   ggplot2::theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
-Looking at the pairs plot, we can see a clear positive relationship between the electrical conductivity (EC) and total solids (TS) variables. This indicates that samples with higher electrical conductivity had a higher amount of total solids. We can also see how there is a notable difference in the distribution of electrical conductivity and total solids values for different geological structures. This suggests that the geological structure may be associated with the amount of electrical conductivity and total solids in a given sample. Chlorine (Cl) and Magnesium (Mg2) appear to have a highly right-skewed distribution across the sample, which is caused by a few extreme values.
+Looking at the pairs plot, we can see a clear positive relationship between the electrical conductivity (EC) and total solids (TS) variables. This indicates that samples with higher electrical conductivity had a higher amount of total solids. We can also see how there is a notable difference in the distribution of electrical conductivity and total solids values for different geological structures. This suggests that the geological structure may be associated with the amount of electrical conductivity and total solids in a given sample. Chlorine ($Cl^-$) and Magnesium ($Mg^{2+}$) appear to have a highly right-skewed distribution across the sample, which is caused by a few extreme values.
 
 ## 3.4 Class analysis
 
@@ -318,9 +323,8 @@ data_spa_waters_classes.melt <- melt(
 )
 ```
 
-
-
 The chemical composition of the classes couldn’t be analysed with boxplots with notches due to the low number of samples in the data. For the correct analysis boxplots without the notches were analysed, usng log-scale for the variables to be all shown on one plot.
+
 ```{r boxplot-log, fig.width=9}
 
 ggplot(data = data_spa_waters_classes.melt, aes(x = Chemical_Compound, y = value)) +
@@ -352,7 +356,11 @@ ggplot(data = data_spa_waters_classes.melt, aes(x = Chemical_Compound, y = value
         legend.position = "none")
 ```
 
-As we look at the boxplots separated by regions, we can see that the Pannonian Basin and the Serbo-Macedonian massif regions produce quite similar profiles. Also, the Carphato-Balcans and the Vardar zone share multiple similar quantities, especially the Na+, K+, and Cl- content. When we look at the grouping by the different geological structures, the groups seem to have more distinct mineral quantities, and no direct similarities are found between the groups.
+As we look at the boxplots separated by regions, we can see that the Pannonian Basin and the Serbo-Macedonian massif regions produce quite similar profiles. Also, the Carphato-Balcans and the Vardar zone share multiple similar quantities, especially the $Na^+$, $K^+$ and $Cl^-$, content. When we look at the grouping by the different geological structures, the groups seem to have more distinct mineral quantities, and no direct similarities are found between the groups.
+
+
+
+## 3.5 Principal Component Analysis
 
 
 ```{r pca-reset-raw}
@@ -365,12 +373,12 @@ data_spa_waters_raw <- data_spa_waters_classes[, -c(ncolumns_data_spa_waters_cla
 PCA.data_spa_waters_raw <- prcomp(data_spa_waters_raw, center = TRUE, scale = TRUE)
 ```
 
-```{r pca-scree}
 
+```{r pca-scree}
 plot(PCA.data_spa_waters_raw, type = "l")
 ```
 
-We can see that the first PC explains a larger portion of the variance of the data, then from PC2 - PC6 they explain similar proportions. Using four PCs, 74.73% of the cumulative variance is captured, with PC1 explaining 35.1%, PC2 17.5%, PC3 12,4% and PC4 9.74% of the total variance.
+PCA was used to analyse the data. The first principal component explains 35.08% of variation in the data, using more principal components increases the amount explained. To decide how many principal components to select, a scree plot was used. Looking at the scree plot, we can see that the first PC explains a larger portion of the variance of the data, then from PC2 - PC6 they explain similar proportions. 4 principal components were chosen as this is where the knee of the plot is. Four principal components explain 74.727% of the cumulative variance in the data, just under three quarters, with PC1 explaining 35.1%, PC2 17.5%, PC3 12,4% and PC4 9.74% of the total variance.
 
 ```{r biplot-geological-structure and region, fig.height=4, fig.width=6}
 ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1,
@@ -380,7 +388,8 @@ ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1,
          groups = interaction(data_spa_waters_classes$Region), ellipse = TRUE)
 ```
 
-From the biplot of PC1 and PC2, we can read that PC1's loadings are all negative, except for pH, and the loadings enter more or less with equal weight for K+, HCO3-, EC, and Na,  and with less weight for SiO2, Cl, SO4.2-, Ca2+, and Mg2+, while pH has a similar value of a positive loading to these; temperature is almost equal to 0. In PC2, Mg2+ and Ca2+ dominate with positive loadings, while temperature enters with similar weight negatively. pH is still entering with notable negative loading, while the other variables are lower, both positive and negative. The groupings are shown for both geological structures and by regions. Grouping by geological structure on the PC1 PC2 biplot seems more visible, while by region it is more dispersed.
+Factor loadings from the PCA show how much each original variable contributes to each principal component. From the biplot of PC1 and PC2, we can read that PC1's loadings are all negative, except for pH, and the loadings enter more or less with equal weight for K+, HCO3-, EC, TS and Na+,  and with less weight for SiO2, Cl, SO4.2-, Ca2+, and Mg2+, while pH has a similar value of a positive loading to these; temperature is almost equal to 0. In PC2, Mg2+ and Ca2+ dominate with positive loadings, while temperature enters with similar weight negatively. pH is still entering with notable negative loading, while the other variables are lower, both positive and negative. The groupings are shown for both geological structures and by regions. Grouping by geological structure on the PC1 PC2 biplot seems more visible, while by region it is more dispersed.
+
 
 \newpage
 
@@ -397,7 +406,10 @@ ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1, choices = c(1, 3
 
 From the biplot between PC1 and PC3, we can read that in PC3, the largest negative loadings come from SiO2 and SO4_2-, and positive loadings from Cl-, notable loadings enter from temperature negatively, while all other variables enter with a lower loading, both positive and negative.
 
-Factor Analysis
+PC4 is moderately positively associated with EC, TS and SIO2; and moderately negatively associated with Ca2+ and Cl-.
+
+## 3.6 Factor Analysis
+
 
 ```{r factanal-pvalues}
 
@@ -412,7 +424,14 @@ ggplot(data.frame(pvalues), aes(x = 1:n, y = pvalues)) +
   xlab("Number of factors")
 ```
 
-For the Factor Analysis, 4 factors are selected to be modelled. With 4 factors, using the R built-in factanal function, 64.9% of the total variance is captured, slightly less than with PCA.
+```{r factors}
+### Factor analysis
+faresult = factanal(X, factors=4)
+faresult
+```
+
+For the Factor Analysis, 4 factors are selected to be modelled. With 4 factors, using the R built-in factanal function.  Four factors explain 64.9% of variation in the data. No single factor explains a large portion of variation. Factor 1 explains 22.9% of the variation, this is quite a low value for the factor explaining the most variation. Factor loadings can be interpreted to see how strongly each variable is associated with the factor. Factor 1 strongly explains the variation of k+, explaining 82.5% and HCO-3, explaining 89.3% of variation. Factor 1 also explains 65.2% of variation in Na+ and smaller amounts of other variables Factor 2 strongly explains the variation of EC, explaining 92.4% of variation and TS explaining 96.8% of variation. Factor 3 strongly explains variation of Cl-, explaining 83.0% of variation, and moderately explains variation of Na+ explaining 68.1% of variation. Notably Na+ and Cl- are both components of salt, sodium chloride NaCl. Factor 3 could possible be identified as representing salt, although subject knowledge of geology would be required to confirm this. Factor 4 strongly explains variation of SO2-4, explaining 96.9% of variation. Overall subject knowledge of geography is required for further interpretation of the factors.
+
 
 ```{r factanal-diagram}
 
@@ -431,6 +450,8 @@ fa.diagram(principal(data_spa_waters_raw, nfactors = 4, rotate = "varimax")$load
 ```
 
 Factor Analysis with Principal Components returned slightly different results, while maintaining a 74.73% total variance; here, Factor 1 is associated with TS and EC, with large loadings and a moderate loading of HCO3-; Factor 2 is associated with Ca2+ with the highest loading and Mg2+, K+, and pH with moderate loadings. Factor 3 includes temperature, SiO2 and SO4_2- with equally moderate loadings, while Factor 4 captures Na+ and Cl- contents. These loadings are the closest to the ones described in the paper. They also report that their PC1 was positively correlated with EC, TS and HCO3- as seen on our factor diagram. Equally, they report that their PC2 resembles the “hardness” component of the minerals, meaning high positive loadings from Mg2+ and Ca2+, just as our Factor 2. Their other two components describe the radiology data, which we do not have, but our two other factors also add important indications. Factor 3 is associated with the temperature and silica content of the water, which are also linked, as well as Factor 4 tells us about the dissolved salt in the water associated with Cl- and Na+.
+
+## 3.6 Cluster analysis
 
 ```{r clustering-kmeans geom, fig.height=4, fig.width=6}
 
@@ -513,13 +534,29 @@ Showing the score plot of PC1 and PC2, using K-means clustering, with the assump
 
 When we compare by geological structures, we can see that samples from Karstic terrains are grouped closely together but close to the samples taken from the Volcanogenic massif. Samples from Metamorphic regions separate well from the others; samples from Hydrological basins can be found in both clusters.
 
+## 3.7 Hierarchical Cluster Analysis
 
-Dendogram
+Hierarchical cluster analysis was performed on the data and used to group the spa sites. Visualisation is by dendrogram. The more closely related the sites are, the lower the connection of branches on the dendrogram.
+
+One dendrogram colours the spa sites by geotectonic zone and geological structure. This visualises any possible relationship between these variables and spa sites. There are no relationships obviously present. There may possibly be some slight groupings of Serbo-Macedonian massifs on the left and right sides of the dendrogram. The grouping between sites 16 to 20 seems to contain mostly volcanic massifs.
+
+The other dendrogram is coloured to depict four clusters of spa sites. These clusters do not contain the same number of sites. The green cluster contains only site 4 whereas the blue cluster contains 18 sites. Hierarchical clustering works by joining two sites that are closest in distance into a cluster. This process repeats joining sites and clusters by distance. The four clusters were created by ‘cutting’ the dendrogram where there are four lines, and therefore four clusters present. The green cluster containing only one site suggests that site is very different to the other sites in the study.
+
 
 ## Discussion
-Our factor analysis identified 4 factors, and explained 64.9% of the total variance. These results are the same as theirs in terms of parsimony, but have less explained variance. So, our findings do not improve the model quality in terms of parsimony or explained variance. It is worth noting the factors identified by our factor analysis are more interpretable compared to the principal components identified through their PCA, as there is a clearer understanding of the relationships between the variables.
 
-Are the groups identified by the dendrogram consistent with changes in the
-linkage and distance?
+Our factor analysis identified 4 factors, and explained 64.9% of the total variance. A goal of ours throughout this investigation was to see if we could improve the principal component analysis done by Tanaskovic using factor analysis in terms of model quality with parsimony. In the 2012 paper, their “PCA reduced the variables to four latent factors which explained 74.2% of the sampling variance responsible for the data structure.” The first component explained 37.5% of this, and they noted it could be conditionally named as the “mineralisation or residence time” factor due to the contribution of specific variables. The second (the “hardness” component), third, and fourth principal components accounted for less variation: between 10.5% and 13.8%. 
+
+Seeing as our goal involved parsimony we began by checking the p-values of models with one factor through to 4. The p-values from the factanal R function tests whether the specified factor model is sufficient to reproduce the observed correlation matrix (essentially the null is the chosen number of factors is enough and they fit the data well). The models with one, two, and three factors get a very small p-value (practically zero), this means three or less factors do not fit the data well. For four factors we get a p-value of $2.62 \times 10^{-10}$ which is also much smaller than a reasonable significance level. So immediately we know we don’t get a model as parsimonious, or more so, using our factor analysis. 
+
+Even so, we can continue with our four factor model. Our factor model explains 64.9% of the variation which means compared to Tanaskovic’s PCA’s 74.2% our factor model is worse. This is expected given the objectives of PCA and FA. 
+
+An important note before we completely write-off factor analysis is that it does improve the interpretability of the underlying relationships between our variables. We get clear groups and also are able to identify variables not significantly explained by the factors (uniqueness). 
+
+So the answer is that we can not improve on Tanaskovic’s PCA but we can improve interpretability while retaining parsimony (we get this interpretation advantage regardless of our fit to the data).
+These results are the same as theirs in terms of parsimony, but have less explained variance. So, our findings do not improve the model quality in terms of parsimony or explained variance. It is worth noting the factors identified by our factor analysis are more interpretable compared to the principal components identified through their PCA, as there is a clearer understanding of the relationships between the variables.
+
+
+# References
 
 
