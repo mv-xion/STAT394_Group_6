@@ -7,13 +7,11 @@ fontsize: 12pt
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE,echo = FALSE)
 ```
+
 ```{r install-packages, eval=FALSE}
 
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
 install.packages(c("reshape2", "ggplot2", "ggcorrplot", "GGally", "psych", "ggnewscale","rstatix"))
 install.packages("devtools")
 devtools::install_github("vqv/ggbiplot")
@@ -33,12 +31,13 @@ library(GGally)
 library(ggbiplot)
 library(psych)
 library(ggnewscale)
+
+set.seed(123)
 ```
 
 
-```{r echo=FALSE}
-setwd("/Applications/Github/STAT394_Group_6/Code")
-data <- read.csv(file.path("..","Data","Data.csv"), header=TRUE)
+```{r data-reading-cat}
+data <- read.csv(file.path("..","..","Data","Data.csv"), header=TRUE)
 names(data) <- c("No.", "Name", "Temp", 
               "pH",
               "EC", 
@@ -57,9 +56,47 @@ names(data) <- c("No.", "Name", "Temp",
 X = data[,3:14]
 ```
 
-=======
->>>>>>> e9699947ae13e3bdb8cf9ce72432f9420fdc9acc
->>>>>>> Stashed changes
+```{r clean-data}
+data_spa_waters <- read.csv(file.path("..", "..","Data","Hydrochemical Data.csv"), header=TRUE)
+data_spa_waters_classes <- data_spa_waters[-1, -c(1, 2)]
+ncolumns_data_spa_waters_classes <- ncol(data_spa_waters_classes)
+```
+
+```{r convert-numeric}
+
+data_spa_waters_classes[-c(ncolumns_data_spa_waters_classes - 1, ncolumns_data_spa_waters_classes)] <-
+  lapply(
+    data_spa_waters_classes[-c(ncolumns_data_spa_waters_classes - 1, ncolumns_data_spa_waters_classes)],
+    function(x) round(as.numeric(x), 3)
+  )
+
+# Set Structure and Region as factors
+data_spa_waters_classes$Geological.structure <- as.factor(data_spa_waters_classes$Geological.structure)
+data_spa_waters_classes$Region <- as.factor(data_spa_waters_classes$Region)
+```
+
+```{r raw-data}
+
+data_spa_waters_raw <- data_spa_waters_classes[, -c(ncolumns_data_spa_waters_classes - 1, ncolumns_data_spa_waters_classes)]
+
+head(data_spa_waters_raw)
+```
+
+```{r data-read-jack}
+
+data <- read.csv(file.path("..","..","Data","Data.csv"), header=TRUE)
+summary(data)
+hydroclean<-data[, 3:14]
+as.numeric(hydroclean$T)->hydroclean$T
+as.numeric(hydroclean$EC)->hydroclean$EC
+as.numeric(hydroclean$TS)->hydroclean$TS
+as.numeric(hydroclean$Ca2.)->hydroclean$Ca2.
+
+head(hydroclean)
+summary(hydroclean)
+```
+
+
 # An Analysis on Tanaskovi´c et al. (2012)
 ### Group 6
 
@@ -91,28 +128,19 @@ The data used for our study were taken from Tanasković et al. (2012), Table 1, 
 ## Methods:
 
 The multivariate analysis of the data was done with the freely available RStudio in the R software, developed locally at the University of Auckland in New Zealand (ref). 
+
 Quantitative - Cathrine
+
 For the qualitative analysis, the chemical data were studied using a Pearson Correlation Matrix of the data. Shapiro-Wilk’s tests were used to test whether each of our 12 variables individually followed a normal distribution with a significance level of 0.05. QQ-plots and Histograms were also used alongside these tests to check univariate normality for each of our variables. A Mardia’s test and a Henze-Zirkler test were carried out with a significance level of 0.05 to check whether our variables jointly followed a multivariate normal distribution. 
 
-<<<<<<< Updated upstream
+
 Mahalanobis distance was calculated from the multivariate mean and standard deviation to assess the consistency of the samples. For the validity of the Mahalanobis distance, we initially transformed most of the variables using individual box-cox transformations with differing lambda values. Results were also analysed with a pair plot for the different categories found by Mahalanobis distance.
-=======
-<<<<<<< HEAD
-Mahalanobis distance was calculated from the multivariate mean and standard deviation to assess the consistency of the samples. For the validity of the Mahalanobis distance, we initially transformed most of the variables using  box-cox transformations with differing lambda values. Results were also analysed with a pair plot for the different categories found by Mahalanobis distance.
-=======
-Mahalanobis distance was calculated from the multivariate mean and standard deviation to assess the consistency of the samples. For the validity of the Mahalanobis distance, we initially transformed most of the variables using individual box-cox transformations with differing lambda values. Results were also analysed with a pair plot for the different categories found by Mahalanobis distance.
->>>>>>> e9699947ae13e3bdb8cf9ce72432f9420fdc9acc
->>>>>>> Stashed changes
 
 Boxplots were used to show the chemical composition of the samples across the different geological structures and the different regions. In order to make the data more interpretable, PCA and FA were used to transform the data into a smaller dimension. Biplots and factor diagrams were used to facilitate the analysis of employing these dimensionality reduction techniques and interpret the structure of the data. Principal Components capture the maximum variance available in the dataset by transforming the data using eigenvalue decomposition. We use factor analysis with Varimax transformation to reduce the number of variable loadings per Factor and favour a reduced number of variables with higher loadings. This helps uncover psychological senses behind the data. For further analysis of the data, we also employ k-means clustering and HCA and compare our results with Tanaskovic et al.(2012).
 
 
 \newpage
 
-<<<<<<< Updated upstream
-## Results and Discussion
-=======
-<<<<<<< HEAD
 # Results and Discussion
 
 ## 3.1 Data analysis
@@ -187,6 +215,15 @@ ggpairs(data_spa_waters_raw)
 Looking at the pairs plot, we can see a clear positive relationship between the electrical conductivity (EC) and total solids (TS) variables. This indicates that samples with higher electrical conductivity had a higher amount of total solids. We can also see how there is a notable difference in the distribution of electrical conductivity and total solids values for different geological structures. This suggests that the geological structure may be associated with the amount of electrical conductivity and total solids in a given sample. Chlorine (Cl) and Magnesium (Mg2) appear to have a highly right-skewed distribution across the sample, which is caused by a few extreme values.
 
 ## 3.4 Class analysis
+
+```{r melt-data}
+
+data_spa_waters_classes.melt <- melt(
+  data = data_spa_waters_classes[-ncolumns_data_spa_waters_classes],
+  id.vars = "Geological.structure",
+  variable.name = "Chemical_Compound"
+)
+```
 
 ```{r boxplot-log, fig.width=9}
 
@@ -285,23 +322,22 @@ FA3
 
 Factor Analysis with Principal Components returned slightly different results, while maintaining a 74.73% total variance; here, Factor 1 is associated with TS and EC, with large loadings and a moderate loading of HCO3-; Factor 2 is associated with Ca2+ with the highest loading and Mg2+, K+, and pH with moderate loadings. Factor 3 includes temperature, SiO2 and SO4_2- with equally moderate loadings, while Factor 4 captures Na+ and Cl- contents. These loadings are the closest to the ones described in the paper. They also report that their PC1 was positively correlated with EC, TS and HCO3- as seen on our factor diagram. Equally, they report that their PC2 resembles the “hardness” component of the minerals, meaning high positive loadings from Mg2+ and Ca2+, just as our Factor 2. Their other two components describe the radiology data, which we do not have, but our two other factors also add important indications. Factor 3 is associated with the temperature and silica content of the water, which are also linked, as well as Factor 4 tells us about the dissolved salt in the water associated with Cl- and Na+.
 
-```{r clustering-kmeans}
+```{r clustering-kmeans geom}
 
-# 1. Build the scores data frame
+# Build the scores data frame
 scores_df <- as.data.frame(PCA.data_spa_waters_raw$x)
 scores_df$Group <- data_spa_waters_classes$Geological.structure #Region
 scores_df$Label <- 1:nrow(scores_df)
 
-# 2. Variance explained for axis labels
+# Variance explained for axis labels
 var_explained <- (PCA.data_spa_waters_raw$sdev^2 / sum(PCA.data_spa_waters_raw$sdev^2)) * 100
 
-# 3. Run clustering on the PC scores (choose number of clusters, e.g. 3)
-set.seed(123)
-k <- 2  # adjust based on your data
-km <- kmeans(scores_df[, c("PC1", "PC2")], centers = k)
+# Run clustering on the PC scores
+k <- 2
+km <- kmeans(scores_df[, c("PC1", "PC2")], centers = k, nstart=20)
 scores_df$Cluster <- factor(km$cluster)
 
-# 4. Dynamic color/shape mapping for Group
+# Dynamic color/shape mapping for Group
 groups <- unique(scores_df$Group)
 my_colors <- setNames(c("magenta", "blue", "black", "red", "darkgreen", "orange")[1:length(groups)], groups)
 my_shapes <- setNames(c(8, 16, 0, 2, 17, 15)[1:length(groups)], groups)
@@ -324,6 +360,45 @@ ggplot(scores_df, aes(x = PC1, y = PC2)) +
         legend.background = element_rect(color = "black", linewidth = 0.3))
 ```
 
+```{r clustering-kmeans region}
+
+# Build the scores data frame
+scores_df <- as.data.frame(PCA.data_spa_waters_raw$x)
+scores_df$Group <- data_spa_waters_classes$Region
+scores_df$Label <- 1:nrow(scores_df)
+
+# Variance explained for axis labels
+var_explained <- (PCA.data_spa_waters_raw$sdev^2 / sum(PCA.data_spa_waters_raw$sdev^2)) * 100
+
+# Run clustering on the PC scores 
+k <- 2  
+km <- kmeans(scores_df[, c("PC1", "PC2")], centers = k, nstart=20)
+scores_df$Cluster <- factor(km$cluster)
+
+# Dynamic color/shape mapping for Group
+groups <- unique(scores_df$Group)
+my_colors <- setNames(c("magenta", "blue", "black", "red", "darkgreen", "orange")[1:length(groups)], groups)
+my_shapes <- setNames(c(8, 16, 0, 2, 17, 15)[1:length(groups)], groups)
+
+ggplot(scores_df, aes(x = PC1, y = PC2)) +
+  stat_ellipse(aes(group = Cluster), type = "norm", level = 0.95,
+               color = "grey30", linetype = 2, linewidth = 0.8) +
+  geom_point(aes(color = Group, shape = Group), size = 3, stroke = 1.2) +
+  geom_text(aes(label = Label, color = Group), vjust = -0.8, hjust = 0.5,
+            size = 3.5, fontface = "bold", show.legend = FALSE) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
+  scale_color_manual(values = my_colors) +
+  scale_shape_manual(values = my_shapes) +
+  labs(x = paste0("Factor 1 (PC1) : ", round(var_explained[1], 2), "%"),
+       y = paste0("Factor 2 (PC2) : ", round(var_explained[2], 2), "%")) +
+  theme_bw() +
+  theme(legend.title = element_blank(),
+        legend.position = c(0.2, 0.85),
+        legend.background = element_rect(color = "black", linewidth = 0.3))
+```
+
+
 Showing the score plot of PC1 and PC2, using K-means clustering, with the assumption of two clusters, we can clearly see what we observed with the boxplot analysis. Most samples from the Pannonian Basin and the Serbo-Macedonian massif regions are grouped, with a few falling outside of this cluster. In the other cluster, we can find all samples from the Carphato-Balcans and the Vardar zone regions alongside the few outliers from the other cluster. In fact, sample 5 is located on the border of the Pannonian Basin and the Serbo-Macedonian massif, and even though labelled as the first one, based on the scores plot, it clearly shares more properties with the second one.
 
 When we compare by geological structures, we can see that samples from Karstic terrains are grouped closely together but close to the samples taken from the Volcanogenic massif. Samples from Metamorphic regions separate well from the others; samples from Hydrological basins can be found in both clusters.
@@ -343,5 +418,4 @@ linkage and distance?
 
 =======
 ## Results and Discussion
->>>>>>> e9699947ae13e3bdb8cf9ce72432f9420fdc9acc
->>>>>>> Stashed changes
+
