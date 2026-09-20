@@ -600,7 +600,7 @@ fa.diagram(principal(data_spa_waters_raw, nfactors = 4, rotate = "varimax")$load
 
 ## Clustering on PCA Scores
 
-```{r clustering-kmeans}
+```{r clustering-kmeans geom}
 
 # Build the scores data frame
 scores_df <- as.data.frame(PCA.data_spa_waters_raw$x)
@@ -637,7 +637,8 @@ ggplot(scores_df, aes(x = PC1, y = PC2)) +
         legend.position = c(0.2, 0.85),
         legend.background = element_rect(color = "black", linewidth = 0.3))
 ```
-```{r clustering-kmeans}
+
+```{r clustering-kmeans region}
 
 # Build the scores data frame
 scores_df <- as.data.frame(PCA.data_spa_waters_raw$x)
