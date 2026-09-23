@@ -1,0 +1,265 @@
+---
+title: "A Multivariate Analysis on Tanaskovi’c et al. (2012)"
+author: "STAT394 Group 6"
+editor: visual
+format: 
+  revealjs:
+    incremental: true
+    slide-number: true
+---
+
+```{r load-libraries}
+library(rstatix)
+library(MASS)
+library(car)
+library(here)
+library(reshape2)
+library(ggplot2)
+library(ggcorrplot)
+library(GGally)
+library(ggbiplot)
+library(psych)
+library(ggnewscale)
+library(pander)
+library(tidyverse)
+library(dendextend)
+
+set.seed(123)
+```
+
+```{r clean-data}
+data_spa_waters <- read.csv(file.path("..", "..","Data","Hydrochemical Data.csv"), header=TRUE)
+data_spa_waters_classes <- data_spa_waters[-1, -c(1, 2)]
+ncolumns_data_spa_waters_classes <- ncol(data_spa_waters_classes)
+```
+
+```{r convert-numeric}
+
+data_spa_waters_classes[-c(ncolumns_data_spa_waters_classes - 1, ncolumns_data_spa_waters_classes)] <-
+  lapply(
+    data_spa_waters_classes[-c(ncolumns_data_spa_waters_classes - 1, ncolumns_data_spa_waters_classes)],
+    function(x) round(as.numeric(x), 3)
+  )
+
+# Set Structure and Region as factors
+data_spa_waters_classes$Geological.structure <- as.factor(data_spa_waters_classes$Geological.structure)
+data_spa_waters_classes$Region <- as.factor(data_spa_waters_classes$Region)
+```
+
+```{r raw-data}
+
+data_spa_waters_raw <- data_spa_waters_classes[, -c(ncolumns_data_spa_waters_classes - 1, ncolumns_data_spa_waters_classes)]
+
+
+```
+
+## Presentation outline
+
+- Summary of Tanaskovi'c et al. (2012), Motivation - Cathrine
+- Our data on Serbian spa waters - Cathrine
+- Results of data analysis:
+  - Normality tests - Jack
+  - Samples consistency - Hamish
+  - Correlations, PCA, Factor, cluster analysis - Viktor
+  - Hierarchical Cluster Analysis - Cathrine
+- Conclusions - Jack
+
+## Correlogram {.smaller}
+
+```{r correlogram, fig.width=6, fig.height=6}
+
+ggcorrplot(cor(data_spa_waters_raw),
+           method = "circle",
+           type = "lower",
+           lab = TRUE)
+```
+
+The highest correlation is between electrical conductivity (EC) and total solids (TS) at 0.96, $Na^+$ and $HCO_3^-$ at 0.877 and and $HCO_3^-$ and $K^+$ at 0.827.
+
+## Pairs plot {.smaller}
+
+```{r pairs-plot1, fig.width=6, fig.height=6}
+
+ggpairs(data_spa_waters_raw)
+```
+
+The variables seem to resemble a truncated normal distribution, like the temperature, pH, EC, TS and $SiO_2$, while others have drastically different distributions, therefore we checked them with tests.
+
+## Boxplots by Geological structure
+
+```{r melt-data}
+
+data_spa_waters_classes.melt <- melt(
+  data = data_spa_waters_classes[-ncolumns_data_spa_waters_classes],
+  id.vars = "Geological.structure",
+  variable.name = "Chemical_Compound"
+)
+```
+
+```{r boxplot-log, fig.width=9}
+
+ggplot(data = data_spa_waters_classes.melt, aes(x = Chemical_Compound, y = value)) +
+  geom_boxplot(aes(col = Chemical_Compound), notch = FALSE) +
+  scale_y_log10() +
+  facet_grid(. ~ Geological.structure) +
+  ylab("Measurements") +
+  theme(axis.text.x = element_text(size = 7, angle = 90, hjust = 1),
+        legend.position = "none")
+```
+
+## Boxplots by Region
+
+```{r melt-data-region}
+
+data_spa_waters_classes.melt <- melt(
+  data = data_spa_waters_classes[-(ncolumns_data_spa_waters_classes-1)],
+  id.vars = "Region",
+  variable.name = "Chemical_Compound"
+)
+```
+
+```{r boxplot-log-region, fig.width=9}
+
+ggplot(data = data_spa_waters_classes.melt, aes(x = Chemical_Compound, y = value)) +
+  geom_boxplot(aes(col = Chemical_Compound), notch = FALSE) +
+  scale_y_log10() +
+  facet_grid(. ~ Region) +
+  ylab("Measurements") +
+  theme(axis.text.x = element_text(size = 7, angle = 90, hjust = 1),
+        legend.position = "none")
+```
+
+## PCA {.smaller}
+
+```{r pca-reset-raw, fig.height=3, fig.width=4}
+
+data_spa_waters_raw <- data_spa_waters_classes[, -c(ncolumns_data_spa_waters_classes - 1, ncolumns_data_spa_waters_classes)]
+```
+
+```{r pca-calculate}
+
+PCA.data_spa_waters_raw <- prcomp(data_spa_waters_raw, center = TRUE, scale = TRUE)
+```
+
+```{r pca-scree}
+plot(PCA.data_spa_waters_raw, type = "l")
+```
+
+4 PCs: 74.727% of the cumulative variance in the data, just under three quarters, with PC1 explaining 35.1%, PC2 17.5%, PC3 12,4% and PC4 9.74% of the total variance.
+
+## PCA - Structure
+
+```{r biplot-geological-structure, fig.height=4, fig.width=6}
+ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1,
+         groups = interaction(data_spa_waters_classes$Geological.structure), ellipse = TRUE)
+```
+
+## PCA - Region
+
+```{r biplot-geological-region, fig.height=4, fig.width=6}
+ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1,
+         groups = interaction(data_spa_waters_classes$Region), ellipse = TRUE)
+
+```
+
+## Factor analysis {.smaller}
+
+```{r factanal-diagram}
+
+fa.diagram(factanal(data_spa_waters_raw, factors = 4)$loadings, digits = 3)
+```
+
+Four factors explain 64.9% of variation in the data. No single factor explains a large portion of variation.
+
+## Factor analysis - with PCA {.smaller}
+
+```{r principal-varimax}
+
+fa_result <- principal(data_spa_waters_raw, nfactors = 4, rotate = "varimax")
+
+# Check variance accounted for by each rotated factor
+
+fa.diagram(principal(data_spa_waters_raw, nfactors = 4, rotate = "varimax")$loadings, digits = 3)
+```
+
+Maintains the 74.73% total variance. These loadings are the closest to the ones described in the paper.
+
+## Cluster analysis - Structure
+
+```{r clustering-kmeans geom, fig.height=4, fig.width=6}
+
+# Build the scores data frame
+scores_df <- as.data.frame(PCA.data_spa_waters_raw$x)
+scores_df$Group <- data_spa_waters_classes$Geological.structure #Region
+scores_df$Label <- 1:nrow(scores_df)
+
+# Variance explained for axis labels
+var_explained <- (PCA.data_spa_waters_raw$sdev^2 / sum(PCA.data_spa_waters_raw$sdev^2)) * 100
+
+# Run clustering on the PC scores
+k <- 2
+km <- kmeans(scores_df[, c("PC1", "PC2")], centers = k, nstart=20)
+scores_df$Cluster <- factor(km$cluster)
+
+# Dynamic color/shape mapping for Group
+groups <- unique(scores_df$Group)
+my_colors <- setNames(c("magenta", "blue", "black", "red", "darkgreen", "orange")[1:length(groups)], groups)
+my_shapes <- setNames(c(8, 16, 0, 2, 17, 15)[1:length(groups)], groups)
+
+ggplot(scores_df, aes(x = PC1, y = PC2)) +
+  stat_ellipse(aes(group = Cluster), type = "norm", level = 0.95,
+               color = "grey30", linetype = 2, linewidth = 0.8) +
+  geom_point(aes(color = Group, shape = Group), size = 3, stroke = 1.2) +
+  geom_text(aes(label = Label, color = Group), vjust = -0.8, hjust = 0.5,
+            size = 3.5, fontface = "bold", show.legend = FALSE) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
+  scale_color_manual(values = my_colors) +
+  scale_shape_manual(values = my_shapes) +
+  labs(x = paste0("Factor 1 (PC1) : ", round(var_explained[1], 2), "%"),
+       y = paste0("Factor 2 (PC2) : ", round(var_explained[2], 2), "%")) +
+  theme_bw() +
+  theme(legend.title = element_blank(),
+        legend.position = c(0.2, 0.85),
+        legend.background = element_rect(color = "black", linewidth = 0.3))
+```
+
+## Cluster analysis - Region
+
+```{r clustering-kmeans region, fig.height=4, fig.width=6}
+
+# Build the scores data frame
+scores_df <- as.data.frame(PCA.data_spa_waters_raw$x)
+scores_df$Group <- data_spa_waters_classes$Region
+scores_df$Label <- 1:nrow(scores_df)
+
+# Variance explained for axis labels
+var_explained <- (PCA.data_spa_waters_raw$sdev^2 / sum(PCA.data_spa_waters_raw$sdev^2)) * 100
+
+# Run clustering on the PC scores 
+k <- 2  
+km <- kmeans(scores_df[, c("PC1", "PC2")], centers = k, nstart=20)
+scores_df$Cluster <- factor(km$cluster)
+
+# Dynamic color/shape mapping for Group
+groups <- unique(scores_df$Group)
+my_colors <- setNames(c("magenta", "blue", "black", "red", "darkgreen", "orange")[1:length(groups)], groups)
+my_shapes <- setNames(c(8, 16, 0, 2, 17, 15)[1:length(groups)], groups)
+
+ggplot(scores_df, aes(x = PC1, y = PC2)) +
+  stat_ellipse(aes(group = Cluster), type = "norm", level = 0.95,
+               color = "grey30", linetype = 2, linewidth = 0.8) +
+  geom_point(aes(color = Group, shape = Group), size = 3, stroke = 1.2) +
+  geom_text(aes(label = Label, color = Group), vjust = -0.8, hjust = 0.5,
+            size = 3.5, fontface = "bold", show.legend = FALSE) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
+  scale_color_manual(values = my_colors) +
+  scale_shape_manual(values = my_shapes) +
+  labs(x = paste0("Factor 1 (PC1) : ", round(var_explained[1], 2), "%"),
+       y = paste0("Factor 2 (PC2) : ", round(var_explained[2], 2), "%")) +
+  theme_bw() +
+  theme(legend.title = element_blank(),
+        legend.position = c(0.2, 0.85),
+        legend.background = element_rect(color = "black", linewidth = 0.3))
+```
