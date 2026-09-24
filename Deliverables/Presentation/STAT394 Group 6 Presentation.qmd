@@ -1,0 +1,657 @@
+---
+title: "A Multivariate Analysis on Tanaskovi'c et al. (2012)"
+author: "STAT394 Group 6"
+format: pptx
+editor: visual
+---
+
+![](images/ReportTitle.png)
+
+## Presentation outline
+
+- Summary of Tanaskovi'c et al. (2012), Motivation - Hamish
+- Our data on Serbian spa waters - Cathrine
+- Results of data analysis:
+  - Normality tests - Jack
+  - Samples consistency - Hamish
+  - Correlations, PCA, Factor, cluster analysis - Viktor
+  - Hierarchical Cluster Analysis - Cathrine
+- Conclusions - Jack
+
+## The Report
+
+- Sampled spa water from 30 locations across Serbia.
+
+- Measured 18 variables from 4 types of geological structure.
+
+- 12 hydrochemical variables.
+
+- 6 Radioactive Isotopes.
+
+- Aimed to classify and group spa waters based on hydrochemical properties, radioactive isotopes, and geological structure.
+
+- Analysed the data using Pearson correlation, PCA, and HCA.
+
+------------------------------------------------------------------------
+
+## Our Analysis
+
+We aimed to answer the following questions about the hydrological data using quantitative and qualitative analysis methods.
+
+- Can you improve the paper’s results using Factor Analysis in terms of model quality with parsimony?
+
+- Are the groups identified by the dendrogram consistent with changes in the linkage and distance?
+
+------------------------------------------------------------------------
+
+```{r install-packages, eval=FALSE}
+
+install.packages(c("reshape2", "ggplot2", "ggcorrplot", "GGally", "psych", "ggnewscale","rstatix", "tidyverse","dendextend", "car", "here", "pander"))
+install.packages("devtools")
+devtools::install_github("vqv/ggbiplot")
+
+
+```
+
+```{r load-libraries}
+library(rstatix)
+library(MASS)
+library(car)
+library(here)
+library(reshape2)
+library(ggplot2)
+library(ggcorrplot)
+library(GGally)
+library(ggbiplot)
+library(psych)
+library(ggnewscale)
+library(pander)
+library(tidyverse)
+library(dendextend)
+
+set.seed(123)
+```
+
+```{r data-reading-cat}
+data <- read.csv(file.path("..","..","Data","Data.csv"), header=TRUE)
+names(data) <- c("No.", "Name", "Temp", 
+              "pH",
+              "EC", 
+              "TS", 
+              "CA2+", 
+              "Mg2+", 
+              "NA+", 
+              "k+", 
+              "Cl-", 
+              "SO2-4", 
+              "HCO-3", 
+              "SiO2",
+              "Geological Structure",
+              "Geotectonic Zone")
+
+X = data[,3:14]
+```
+
+```{r clean-data}
+data_spa_waters <- read.csv(file.path("..", "..","Data","Hydrochemical Data.csv"), header=TRUE)
+data_spa_waters_classes <- data_spa_waters[-1, -c(1, 2)]
+ncolumns_data_spa_waters_classes <- ncol(data_spa_waters_classes)
+```
+
+```{r convert-numeric}
+
+data_spa_waters_classes[-c(ncolumns_data_spa_waters_classes - 1, ncolumns_data_spa_waters_classes)] <-
+  lapply(
+    data_spa_waters_classes[-c(ncolumns_data_spa_waters_classes - 1, ncolumns_data_spa_waters_classes)],
+    function(x) round(as.numeric(x), 3)
+  )
+
+# Set Structure and Region as factors
+data_spa_waters_classes$Geological.structure <- as.factor(data_spa_waters_classes$Geological.structure)
+data_spa_waters_classes$Region <- as.factor(data_spa_waters_classes$Region)
+```
+
+```{r raw-data}
+
+data_spa_waters_raw <- data_spa_waters_classes[, -c(ncolumns_data_spa_waters_classes - 1, ncolumns_data_spa_waters_classes)]
+
+
+```
+
+```{r data-read-jack}
+
+data <- read.csv(file.path("..","..","Data","Hydrochemical Data.csv"), header=TRUE)
+
+hydroclean<-data[-1, 3:14]
+as.numeric(hydroclean$T)->hydroclean$T
+as.numeric(hydroclean$EC)->hydroclean$EC
+as.numeric(hydroclean$TS)->hydroclean$TS
+as.numeric(hydroclean$Ca2.)->hydroclean$Ca2.
+as.numeric(hydroclean$SO4_2.)->hydroclean$SO4_2.
+
+library(MASS)
+
+trhydroclean <- hydroclean
+
+for (col_name in names(hydroclean)) {
+  x <- hydroclean[[col_name]] 
+  #Make sure we have only strictly positive values
+  if (any(x <= 0, na.rm = TRUE)) {
+    x <- x + 0.001 
+  }
+  
+  #Get optimal lambda for the column we are in for its BC transform
+  bc <- boxcox(lm(x ~ 1), plotit = FALSE)
+  optimal_lambda <- bc$x[which.max(bc$y)]
+  
+  #Apply the BC transform to this column
+  if (abs(optimal_lambda) < 1e-3) {
+    trhydroclean[[col_name]] <- log(x)
+  } else {
+    trhydroclean[[col_name]] <- (x^optimal_lambda - 1) / optimal_lambda
+  }
+  
+}
+```
+
+## Histograms
+
+```{r, echo=FALSE}
+par(mfrow = c(3,4))
+hist(hydroclean$T, breaks = 25, main = "Histogram of T")
+hist(hydroclean$pH, breaks = 25, main = "Histogram of pH")
+hist(hydroclean$EC, breaks = 25, main = "Histogram of EC")
+hist(hydroclean$TS, breaks =25, main = "Histogram of TS")
+hist(hydroclean$Ca2., breaks =25, main = "Histogram of Ca2+")
+hist(hydroclean$Mg2., breaks =25, main = "Histogram of Mg2+")
+hist(hydroclean$Na., breaks =25, main = "Histogram of Na+")
+hist(hydroclean$K., breaks =25, main = "Histogram of K+")
+hist(hydroclean$Cl., breaks =25, main = "Histogram of Cl-")
+hist(hydroclean$SO4_2., breaks =25, main = "Histogram of SO4_2-")
+hist(hydroclean$HCO3_., breaks =25, main = "Histogram of HCO3_-")
+hist(hydroclean$SiO2, breaks =25, main = "Histogram of SiO2")
+```
+
+Normal distributions are unbounded and symmetric
+
+These are bound below by zero and right-skewed
+
+## Normal QQ-Plots
+
+```{r, echo=FALSE}
+par(mfrow = c(3,4))
+qqnorm(hydroclean$T, main = "T")
+qqline(hydroclean$T)
+qqnorm(hydroclean$pH, main = "pH")
+qqline(hydroclean$pH)
+qqnorm(hydroclean$EC, main = "EC")
+qqline(hydroclean$EC)
+qqnorm(hydroclean$TS, main = "TS")
+qqline(hydroclean$TS)
+qqnorm(hydroclean$Ca2., main = "Ca2+")
+qqline(hydroclean$Ca2.)
+qqnorm(hydroclean$Mg2., main = "Mg2+")
+qqline(hydroclean$Mg2.)
+qqnorm(hydroclean$Na., main = "Na+")
+qqline(hydroclean$Na.)
+qqnorm(hydroclean$K., main = "K+")
+qqline(hydroclean$K.)
+qqnorm(hydroclean$Cl., main = "Cl+")
+qqline(hydroclean$Cl.)
+qqnorm(hydroclean$SO4_2., main = "SO4_2-")
+qqline(hydroclean$SO4_2.)
+qqnorm(hydroclean$HCO3_., main = "HCO3_-")
+qqline(hydroclean$HCO3_.)
+qqnorm(hydroclean$SiO2, main = "SiO2")
+qqline(hydroclean$SiO2)
+
+```
+
+Normally distributed variables will have points that follow the lines
+
+Lots of these have points that curve up off the line - this is right skew
+
+## Shapiro-Wilk Tests 1
+
+```{r, echo=FALSE}
+shapiros <- c(shapiro.test(hydroclean$T),
+              shapiro.test(hydroclean$pH),
+              shapiro.test(hydroclean$EC),
+              shapiro.test(hydroclean$TS),
+              shapiro.test(hydroclean$Ca2.),
+              shapiro.test(hydroclean$Mg2.),
+              shapiro.test(hydroclean$Na.),
+              shapiro.test(hydroclean$K.),
+              shapiro.test(hydroclean$Cl.),
+              shapiro.test(hydroclean$SO4_2.),
+              shapiro.test(hydroclean$HCO3_.),
+              shapiro.test(hydroclean$SiO2))
+
+completed_tests1 <- data.frame(
+  variable = c("T", "pH", "EC", "TS", "Ca2+", "Mg2+"),
+  statistic = c(0.7982, 0.8797, 0.8706, 0.8245, 0.9177, 0.645),
+  p = as.numeric(c("6.092e-05", "0.002769", "0.001726", "0.00019", "0.02344", 
+                   "2.714e-07")))
+
+completed_tests2 <- data.frame(
+  variable = c("Na+", "K+", "Cl+", "SO4_2-",
+               "HCO3_-", "SiO2"),
+  statistic = c(0.7763, 0.812,
+                0.3403, 0.5452, 0.8539, 0.8304),
+  p = as.numeric(c("2.501e-05", "0.0001092", "1.566e-10", "1.664e-08", 
+                   "0.0007483", "0.0002479")))
+
+library(pander)
+
+panderOptions('table.style', 'rmarkdown')
+pander(completed_tests1, 
+       split.table = Inf,               
+       justify = c('left', 'center', 'center'),
+       col.names = c("Variable", "Statistic", "p-value"))
+```
+
+## Shapiro-Wilk Tests 3
+
+Shapiro-Wilk tests are used to test univariate normality
+
+Our Shapiro-Wilk tests conclude non-normality for all our variables (at 0.05 significance level)
+
+The chlorine ion measure (Cl.) gets the smallest p-value = $1.566\times10^{-10}$
+
+The calcium ion variable (Ca2.) gets the largest p-value = 0.02344
+
+## Multivariate Normal Tests
+
+Because we have variables that individually don't follow a normal distribution our joint distribution can not be multivariate normal
+
+In Tanaskovic et al., where data failed on the Shapiro-Wilk tests, a Box-Cox transformation was used
+
+If we do the same we won't be guaranteed a joint multivariate normal distribution but we can try
+
+## Histograms for Transformed Variables
+
+```{r, echo=FALSE}
+par(mfrow = c(3,4))
+hist(trhydroclean$T, breaks = 25, main = "Histogram of T")
+hist(trhydroclean$pH, breaks = 25, main = "Histogram of pH")
+hist(trhydroclean$EC, breaks = 25, main = "Histogram of EC")
+hist(trhydroclean$TS, breaks =25, main = "Histogram of TS")
+hist(trhydroclean$Ca2., breaks =25, main = "Histogram of Ca2+")
+hist(trhydroclean$Mg2., breaks =25, main = "Histogram of Mg2+")
+hist(trhydroclean$Na., breaks =25, main = "Histogram of Na+")
+hist(trhydroclean$K., breaks =25, main = "Histogram of K+")
+hist(trhydroclean$Cl., breaks =25, main = "Histogram of Cl-")
+hist(trhydroclean$SO4_2., breaks =25, main = "Histogram of SO4_2-")
+hist(trhydroclean$HCO3_., breaks =25, main = "Histogram of HCO3_-")
+hist(trhydroclean$SiO2, breaks =25, main = "Histogram of SiO2")
+```
+
+## Normal QQ-Plots for Transformed Variables
+
+```{r, echo=FALSE}
+par(mfrow = c(3,4))
+qqnorm(trhydroclean$T, main = "T")
+qqline(trhydroclean$T)
+qqnorm(trhydroclean$pH, main = "pH")
+qqline(trhydroclean$pH)
+qqnorm(trhydroclean$EC, main = "EC")
+qqline(trhydroclean$EC)
+qqnorm(trhydroclean$TS, main = "TS")
+qqline(trhydroclean$TS)
+qqnorm(trhydroclean$Ca2., main = "Ca2+")
+qqline(trhydroclean$Ca2.)
+qqnorm(trhydroclean$Mg2., main = "Mg2+")
+qqline(trhydroclean$Mg2.)
+qqnorm(trhydroclean$Na., main = "Na+")
+qqline(trhydroclean$Na.)
+qqnorm(trhydroclean$K., main = "K+")
+qqline(trhydroclean$K.)
+qqnorm(trhydroclean$Cl., main = "Cl+")
+qqline(trhydroclean$Cl.)
+qqnorm(trhydroclean$SO4_2., main = "SO4_2-")
+qqline(trhydroclean$SO4_2.)
+qqnorm(trhydroclean$HCO3_., main = "HCO3_-")
+qqline(trhydroclean$HCO3_.)
+qqnorm(trhydroclean$SiO2, main = "SiO2")
+qqline(trhydroclean$SiO2)
+```
+
+## Shapiro-Wilk Tests for Transformed Variables 1
+
+```{r, echo=FALSE}
+shapiros <- c(shapiro.test(trhydroclean$T),
+              shapiro.test(trhydroclean$pH),
+              shapiro.test(trhydroclean$EC),
+              shapiro.test(trhydroclean$TS),
+              shapiro.test(trhydroclean$Ca2.),
+              shapiro.test(trhydroclean$Mg2.),
+              shapiro.test(trhydroclean$Na.),
+              shapiro.test(trhydroclean$K.),
+              shapiro.test(trhydroclean$Cl.),
+              shapiro.test(trhydroclean$SO4_2.),
+              shapiro.test(trhydroclean$HCO3_.),
+              shapiro.test(trhydroclean$SiO2))
+
+completed_tests1 <- data.frame(
+  variable = c("T", "pH", "EC", "TS", "Ca2+", "Mg2+"),
+  statistic = c(0.98154, 0.94753, 0.97475, 0.97836, 0.96529, 0.9471),
+  p = as.numeric(c("0.865", "0.1451", "0.6753", "0.7804", "0.4196", 
+                   "0.1413")))
+
+completed_tests2 <- data.frame(
+  variable = c("Na+", "K+", "Cl+", "SO4_2-",
+               "HCO3_-", "SiO2"),
+  statistic = c(0.95737, 0.94157, 0.97362, 0.96966, 0.94129, 0.95221),
+  p = as.numeric(c("0.265", "0.1003", "0.6423", "0.5298", 
+                   "0.09856", "0.1937")))
+
+library(pander)
+
+panderOptions('table.style', 'rmarkdown')
+pander(completed_tests1, 
+       split.table = Inf,               
+       justify = c('left', 'center', 'center'),
+       col.names = c("Variable", "Statistic", "p-value"))
+```
+
+## Shapiro-Wilk Tests for Transformed Variables 2
+
+```{r}
+panderOptions('table.style', 'rmarkdown')
+pander(completed_tests2, 
+       split.table = Inf,               
+       justify = c('left', 'center', 'center'),
+       col.names = c("Variable", "Statistic", "p-value"))
+```
+
+## Transformed Variables
+
+This transformation has improved the look of our histograms and normal QQ-plots
+
+All of our p-values have increased to above our 0.05 significance level and so we fail to reject the null hypothesis and conclude that each of our transformed variables follow a normal distribution
+
+## Multivariate Normal Tests 2
+
+```{r, echo=FALSE}
+library(psych)
+mardia(trhydroclean, plot=FALSE)
+```
+
+Mardia's test has the null hypothesis the data follows a multivariate normal distribution and looks at two features of the data: skewness and kurtosis
+
+We get a p-value of 0.79 for skewness and 0.038 for kurtosis
+
+Because we reject for the kurtosis component we reject the null hypothesis of the test - even with transformed variables the data is not multivariate normal
+
+## Multivariate Normal Tests 3
+
+```{r}
+library(mvnTest)
+HZ.test(trhydroclean)
+```
+
+## Samples Consistency Analysis
+
+### Key Findings - Mahalanobis
+
+- 10 surprising observations past the first two cut points.
+
+- 5 past all three.
+
+- Observations: 1, 2, 4, 15, 16, 23, 24, 28, 29 and 30.
+
+```{r mahalanobis-setup, Echo = FALSE}
+
+mu.hat <- colMeans(data_spa_waters_raw)
+Sigma.hat <- cov(data_spa_waters_raw)
+
+dM <- mahalanobis(data_spa_waters_raw, center = mu.hat, cov = Sigma.hat)
+
+upper.quantiles <- qchisq(c(.9, .95, .99), df = 9)
+density.at.quantiles <- dchisq(x = upper.quantiles, df = 9)
+cut.points <- data.frame(upper.quantiles, density.at.quantiles)
+```
+
+```{r mahalanobis-plot, echo = FALSE, fig.width=6, fig.height=6}
+
+ggplot(data.frame(dM), aes(x = dM)) +
+  geom_histogram(aes(y = after_stat(density)), bins = nclass.FD(dM),
+                 fill = "white", col = "black") +
+  geom_rug() +
+  stat_function(fun = dchisq, args = list(df = 9),
+                col = "red", size = 2, alpha = .7, xlim = c(0, 25)) +
+  geom_segment(data = cut.points,
+               aes(x = upper.quantiles, xend = upper.quantiles,
+                   y = rep(0, 3), yend = density.at.quantiles),
+               col = "blue", size = 2) +
+  xlab("Mahalanobis distances and cut points") +
+  ylab("Histogram and density")
+```
+
+------------------------------------------------------------------------
+
+### Key Findings - Pairs Plot
+
+- Strong positive relationship between EC and TS.
+
+- $Cl^-$ and $Mg^{2+}$ have high right-skew.
+
+- Difference in EC and TS values across surprise levels.
+
+```{r surprise-classification}
+
+data_spa_waters_raw$dM <- dM
+data_spa_waters_raw$surprise <- cut(
+  data_spa_waters_raw$dM,
+  breaks = c(0, upper.quantiles, Inf),
+  labels = c("Typical", "Somewhat", "Surprising", "Very")
+)
+```
+
+```{r pairs-plot-surprise, fig.width=9, fig.height=9}
+
+ggpairs(data_spa_waters_raw, columns = 1:9,
+        ggplot2::aes(col = surprise, alpha = .5),
+        upper = list(continuous = "density", combo = "box_no_facet")) +
+  ggplot2::scale_color_manual(values = c("lightgray", "green", "blue", "red")) +
+  ggplot2::theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+------------------------------------------------------------------------
+
+## Correlogram {.smaller}
+
+```{r correlogram, fig.width=6, fig.height=6}
+data_spa_waters_raw <- data_spa_waters_classes[, -c(ncolumns_data_spa_waters_classes - 1, ncolumns_data_spa_waters_classes)]
+ggcorrplot(cor(data_spa_waters_raw),
+           method = "circle",
+           type = "lower",
+           lab = TRUE)
+```
+
+The highest correlation is between electrical conductivity (EC) and total solids (TS) at 0.96, $Na^+$ and $HCO_3^-$ at 0.877 and and $HCO_3^-$ and $K^+$ at 0.827.
+
+## Boxplots by Geological structure {.smaller}
+
+```{r melt-data}
+
+data_spa_waters_classes.melt <- melt(
+  data = data_spa_waters_classes[-ncolumns_data_spa_waters_classes],
+  id.vars = "Geological.structure",
+  variable.name = "Chemical_Compound"
+)
+```
+
+```{r boxplot-log, fig.width=9}
+
+ggplot(data = data_spa_waters_classes.melt, aes(x = Chemical_Compound, y = value)) +
+  geom_boxplot(aes(col = Chemical_Compound), notch = FALSE) +
+  scale_y_log10() +
+  facet_grid(. ~ Geological.structure) +
+  ylab("Measurements") +
+  theme(axis.text.x = element_text(size = 7, angle = 90, hjust = 1),
+        legend.position = "none")
+```
+
+## Boxplots by Region
+
+```{r melt-data-region}
+
+data_spa_waters_classes.melt <- melt(
+  data = data_spa_waters_classes[-(ncolumns_data_spa_waters_classes-1)],
+  id.vars = "Region",
+  variable.name = "Chemical_Compound"
+)
+```
+
+```{r boxplot-log-region, fig.width=9}
+
+ggplot(data = data_spa_waters_classes.melt, aes(x = Chemical_Compound, y = value)) +
+  geom_boxplot(aes(col = Chemical_Compound), notch = FALSE) +
+  scale_y_log10() +
+  facet_grid(. ~ Region) +
+  ylab("Measurements") +
+  theme(axis.text.x = element_text(size = 7, angle = 90, hjust = 1),
+        legend.position = "none")
+```
+
+## PCA {.smaller}
+
+```{r pca-reset-raw, fig.height=3, fig.width=4}
+
+data_spa_waters_raw <- data_spa_waters_classes[, -c(ncolumns_data_spa_waters_classes - 1, ncolumns_data_spa_waters_classes)]
+
+PCA.data_spa_waters_raw <- prcomp(data_spa_waters_raw, center = TRUE, scale = TRUE)
+plot(PCA.data_spa_waters_raw, type = "l")
+```
+
+4 PCs: 74.727% of the cumulative variance in the data, just under three quarters, with PC1 explaining 35.1%, PC2 17.5%, PC3 12,4% and PC4 9.74% of the total variance.
+
+## PCA - Structure
+
+```{r biplot-geological-structure, fig.height=4, fig.width=6}
+ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1,
+         groups = interaction(data_spa_waters_classes$Geological.structure), ellipse = TRUE)
+```
+
+## PCA - Region
+
+```{r biplot-geological-region, fig.height=4, fig.width=6}
+ggbiplot(PCA.data_spa_waters_raw, obs.scale = 1, var.scale = 1,
+         groups = interaction(data_spa_waters_classes$Region), ellipse = TRUE)
+
+```
+
+## Factor analysis {.smaller}
+
+```{r factanal-diagram}
+
+fa.diagram(factanal(data_spa_waters_raw, factors = 4)$loadings, digits = 3)
+```
+
+Four factors explain 64.9% of variation in the data. No single factor explains a large portion of variation.
+
+## Factor analysis - with PCA {.smaller}
+
+```{r principal-varimax}
+
+fa_result <- principal(data_spa_waters_raw, nfactors = 4, rotate = "varimax")
+
+# Check variance accounted for by each rotated factor
+
+fa.diagram(principal(data_spa_waters_raw, nfactors = 4, rotate = "varimax")$loadings, digits = 3)
+```
+
+Maintains the 74.73% total variance. These loadings are the closest to the ones described in the paper.
+
+## Cluster analysis - Structure
+
+```{r clustering-kmeans geom, fig.height=4, fig.width=6}
+
+# Build the scores data frame
+scores_df <- as.data.frame(PCA.data_spa_waters_raw$x)
+scores_df$Group <- data_spa_waters_classes$Geological.structure #Region
+scores_df$Label <- 1:nrow(scores_df)
+
+# Variance explained for axis labels
+var_explained <- (PCA.data_spa_waters_raw$sdev^2 / sum(PCA.data_spa_waters_raw$sdev^2)) * 100
+
+# Run clustering on the PC scores
+k <- 2
+km <- kmeans(scores_df[, c("PC1", "PC2")], centers = k, nstart=20)
+scores_df$Cluster <- factor(km$cluster)
+
+# Dynamic color/shape mapping for Group
+groups <- unique(scores_df$Group)
+my_colors <- setNames(c("magenta", "blue", "black", "red", "darkgreen", "orange")[1:length(groups)], groups)
+my_shapes <- setNames(c(8, 16, 0, 2, 17, 15)[1:length(groups)], groups)
+
+ggplot(scores_df, aes(x = PC1, y = PC2)) +
+  stat_ellipse(aes(group = Cluster), type = "norm", level = 0.95,
+               color = "grey30", linetype = 2, linewidth = 0.8) +
+  geom_point(aes(color = Group, shape = Group), size = 3, stroke = 1.2) +
+  geom_text(aes(label = Label, color = Group), vjust = -0.8, hjust = 0.5,
+            size = 3.5, fontface = "bold", show.legend = FALSE) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
+  scale_color_manual(values = my_colors) +
+  scale_shape_manual(values = my_shapes) +
+  labs(x = paste0("Factor 1 (PC1) : ", round(var_explained[1], 2), "%"),
+       y = paste0("Factor 2 (PC2) : ", round(var_explained[2], 2), "%")) +
+  theme_bw() +
+  theme(legend.title = element_blank(),
+        legend.position = c(0.2, 0.85),
+        legend.background = element_rect(color = "black", linewidth = 0.3))
+```
+
+## Cluster analysis - Region
+
+```{r clustering-kmeans region, fig.height=4, fig.width=6}
+
+# Build the scores data frame
+scores_df <- as.data.frame(PCA.data_spa_waters_raw$x)
+scores_df$Group <- data_spa_waters_classes$Region
+scores_df$Label <- 1:nrow(scores_df)
+
+# Variance explained for axis labels
+var_explained <- (PCA.data_spa_waters_raw$sdev^2 / sum(PCA.data_spa_waters_raw$sdev^2)) * 100
+
+# Run clustering on the PC scores 
+k <- 2  
+km <- kmeans(scores_df[, c("PC1", "PC2")], centers = k, nstart=20)
+scores_df$Cluster <- factor(km$cluster)
+
+# Dynamic color/shape mapping for Group
+groups <- unique(scores_df$Group)
+my_colors <- setNames(c("magenta", "blue", "black", "red", "darkgreen", "orange")[1:length(groups)], groups)
+my_shapes <- setNames(c(8, 16, 0, 2, 17, 15)[1:length(groups)], groups)
+
+ggplot(scores_df, aes(x = PC1, y = PC2)) +
+  stat_ellipse(aes(group = Cluster), type = "norm", level = 0.95,
+               color = "grey30", linetype = 2, linewidth = 0.8) +
+  geom_point(aes(color = Group, shape = Group), size = 3, stroke = 1.2) +
+  geom_text(aes(label = Label, color = Group), vjust = -0.8, hjust = 0.5,
+            size = 3.5, fontface = "bold", show.legend = FALSE) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
+  scale_color_manual(values = my_colors) +
+  scale_shape_manual(values = my_shapes) +
+  labs(x = paste0("Factor 1 (PC1) : ", round(var_explained[1], 2), "%"),
+       y = paste0("Factor 2 (PC2) : ", round(var_explained[2], 2), "%")) +
+  theme_bw() +
+  theme(legend.title = element_blank(),
+        legend.position = c(0.2, 0.85),
+        legend.background = element_rect(color = "black", linewidth = 0.3))
+```
+
+## Conclusions
+
+With the missing
+
+## References  {.smaller}
+
+- Chalise, Baburam, Prem Paudyal, Buddha Bahadur Kunwar, Kiran Bishwakarma, Bina Thapa, Ramesh Raj Pant, and Bhanu Bhakta Neupane. 2023. “Water Quality and Hydrochemical Assessments of Thermal Springs, Gandaki Province, Nepal.” Heliyon 9 (6). https://doi.org/10.1016/j.heliyon.2023.e17353.
+
+- Martinovic, Mica, and Mihailo Milivojevic. 2010. “Serbia Country Update.” In Proceedings World Geothermal Congress 2010. Bali, Indonesia. https://worldgeothermal.org/pdf/ IGAstandard/WGC/2010/0164.pdf.
+
+- Tanasković, Irena, Dusan Golobocanin, and Nada Miljević. 2012. “Multivariate Statistical Analysis of Hydrochemical and Radiological Data of Serbian Spa Waters.” Journal of Geochemical Exploration 112 (January): 226–34. https://doi.org/10.1016/j.gexplo.2011. 08.014
