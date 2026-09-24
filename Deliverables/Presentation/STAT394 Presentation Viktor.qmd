@@ -55,7 +55,7 @@ data_spa_waters_raw <- data_spa_waters_classes[, -c(ncolumns_data_spa_waters_cla
 
 ## Presentation outline
 
-- Summary of Tanaskovi'c et al. (2012), Motivation - Cathrine
+- Summary of Tanaskovi'c et al. (2012), Motivation - Hamish
 - Our data on Serbian spa waters - Cathrine
 - Results of data analysis:
   - Normality tests - Jack
@@ -76,7 +76,7 @@ ggcorrplot(cor(data_spa_waters_raw),
 
 The highest correlation is between electrical conductivity (EC) and total solids (TS) at 0.96, $Na^+$ and $HCO_3^-$ at 0.877 and and $HCO_3^-$ and $K^+$ at 0.827.
 
-## Pairs plot {.smaller}
+## Pairs plot  {.smaller}
 
 ```{r pairs-plot1, fig.width=6, fig.height=6}
 
