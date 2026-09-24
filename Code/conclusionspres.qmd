@@ -1,0 +1,42 @@
+---
+title: "conclusionspres"
+format: revealjs
+editor: visual
+---
+
+## Tanaskovic et al.'s Principal Component Analysis
+
+Their PCA reduced the variables to four latent factors which explained 74.2% of the sampling variance responsible for the data structure
+
+The first component explained 37.5% variance and was made up of variables that meant it could be conditionally named the “mineralisation or residence time” factor
+
+The second (the “hardness” component), third, and fourth principal components accounted for less variation: between 10.5% and 13.8%
+
+## Our Factor Analysis
+
+Tests for whether the specified factor model is sufficient to reproduce the observed correlation matrix gave us very small p-values for each model with one through four factors
+
+Our FA does not yield a model that is more parsimonious than Tanaskovic et al.'s PCA while also providing an adequate fit to our data
+
+So we can't improve the results of the paper with FA in terms of model parsimony
+
+## Factor Analysis Advantage
+
+Factor analysis does improve the interpretability of the underlying relationships between our variables
+
+We get clear groups and also are able to identify variables not significantly explained by the factors
+
+So the real answer is that we can not improve on Tanaskovic’s PCA but we can improve interpretability while retaining parsimony
+
+## Dendrograms
+
+The green and purple groups have a higher merge point, suggesting they are more dissimilar
+
+The red and blue groups on the other hand have a lower merge point, meaning they are more similar to each other than the green and purple group
+
+The final merge is a big jump from the two main branches which suggests the two branches identified before this are very dissimilar
+
+The groups identified by the dendrogram are fairly consistent with the changes in linkage and distance
+
+## 
+

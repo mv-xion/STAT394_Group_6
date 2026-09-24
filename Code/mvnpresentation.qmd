@@ -1,0 +1,290 @@
+---
+title: "mvnpresentation"
+format: revealjs
+editor: visual
+---
+
+```{r, echo=FALSE}
+hydrodata<-read.csv("/Users/jackhardy/Documents/GitHub/STAT394_Group_6/Data/Hydrochemical Data.csv")
+
+hydroclean<-hydrodata[-1, 3:14]
+as.numeric(hydroclean$T)->hydroclean$T
+as.numeric(hydroclean$EC)->hydroclean$EC
+as.numeric(hydroclean$TS)->hydroclean$TS
+as.numeric(hydroclean$Ca2.)->hydroclean$Ca2.
+
+library(MASS)
+
+trhydroclean <- hydroclean
+
+for (col_name in names(hydroclean)) {
+  x <- hydroclean[[col_name]] 
+  #Make sure we have only strictly positive values
+  if (any(x <= 0, na.rm = TRUE)) {
+    x <- x + 0.001 
+  }
+  
+  #Get optimal lambda for the column we are in for its BC transform
+  bc <- boxcox(lm(x ~ 1), plotit = FALSE)
+  optimal_lambda <- bc$x[which.max(bc$y)]
+  
+  #Apply the BC transform to this column
+  if (abs(optimal_lambda) < 1e-3) {
+    trhydroclean[[col_name]] <- log(x)
+  } else {
+    trhydroclean[[col_name]] <- (x^optimal_lambda - 1) / optimal_lambda
+  }
+  
+}
+```
+
+## Histograms
+
+```{r, echo=FALSE}
+par(mfrow = c(3,4))
+hist(hydroclean$T, breaks = 25, main = "Histogram of T")
+hist(hydroclean$pH, breaks = 25, main = "Histogram of pH")
+hist(hydroclean$EC, breaks = 25, main = "Histogram of EC")
+hist(hydroclean$TS, breaks =25, main = "Histogram of TS")
+hist(hydroclean$Ca2., breaks =25, main = "Histogram of Ca2+")
+hist(hydroclean$Mg2., breaks =25, main = "Histogram of Mg2+")
+hist(hydroclean$Na., breaks =25, main = "Histogram of Na+")
+hist(hydroclean$K., breaks =25, main = "Histogram of K+")
+hist(hydroclean$Cl., breaks =25, main = "Histogram of Cl-")
+hist(hydroclean$SO4_2., breaks =25, main = "Histogram of SO4_2-")
+hist(hydroclean$HCO3_., breaks =25, main = "Histogram of HCO3_-")
+hist(hydroclean$SiO2, breaks =25, main = "Histogram of SiO2")
+```
+
+Normal distributions are unbounded and symmetric
+
+These are bound below by zero and right-skewed
+
+## Normal QQ-Plots
+
+```{r, echo=FALSE}
+par(mfrow = c(3,4))
+qqnorm(hydroclean$T, main = "T")
+qqline(hydroclean$T)
+qqnorm(hydroclean$pH, main = "pH")
+qqline(hydroclean$pH)
+qqnorm(hydroclean$EC, main = "EC")
+qqline(hydroclean$EC)
+qqnorm(hydroclean$TS, main = "TS")
+qqline(hydroclean$TS)
+qqnorm(hydroclean$Ca2., main = "Ca2+")
+qqline(hydroclean$Ca2.)
+qqnorm(hydroclean$Mg2., main = "Mg2+")
+qqline(hydroclean$Mg2.)
+qqnorm(hydroclean$Na., main = "Na+")
+qqline(hydroclean$Na.)
+qqnorm(hydroclean$K., main = "K+")
+qqline(hydroclean$K.)
+qqnorm(hydroclean$Cl., main = "Cl+")
+qqline(hydroclean$Cl.)
+qqnorm(hydroclean$SO4_2., main = "SO4_2-")
+qqline(hydroclean$SO4_2.)
+qqnorm(hydroclean$HCO3_., main = "HCO3_-")
+qqline(hydroclean$HCO3_.)
+qqnorm(hydroclean$SiO2, main = "SiO2")
+qqline(hydroclean$SiO2)
+
+```
+
+Normally distributed variables will have points that follow the lines
+
+Lots of these have points that curve up off the line - this is right skew
+
+## Shapiro-Wilk Tests 1
+
+```{r, echo=FALSE}
+shapiros <- c(shapiro.test(hydroclean$T),
+              shapiro.test(hydroclean$pH),
+              shapiro.test(hydroclean$EC),
+              shapiro.test(hydroclean$TS),
+              shapiro.test(hydroclean$Ca2.),
+              shapiro.test(hydroclean$Mg2.),
+              shapiro.test(hydroclean$Na.),
+              shapiro.test(hydroclean$K.),
+              shapiro.test(hydroclean$Cl.),
+              shapiro.test(hydroclean$SO4_2.),
+              shapiro.test(hydroclean$HCO3_.),
+              shapiro.test(hydroclean$SiO2))
+
+completed_tests1 <- data.frame(
+  variable = c("T", "pH", "EC", "TS", "Ca2+", "Mg2+"),
+  statistic = c(0.7982, 0.8797, 0.8706, 0.8245, 0.9177, 0.645),
+  p = as.numeric(c("6.092e-05", "0.002769", "0.001726", "0.00019", "0.02344", 
+                   "2.714e-07")))
+
+completed_tests2 <- data.frame(
+  variable = c("Na+", "K+", "Cl+", "SO4_2-",
+               "HCO3_-", "SiO2"),
+  statistic = c(0.7763, 0.812,
+                0.3403, 0.5452, 0.8539, 0.8304),
+  p = as.numeric(c("2.501e-05", "0.0001092", "1.566e-10", "1.664e-08", 
+                   "0.0007483", "0.0002479")))
+
+library(pander)
+
+panderOptions('table.style', 'rmarkdown')
+pander(completed_tests1, 
+       split.table = Inf,               
+       justify = c('left', 'center', 'center'),
+       col.names = c("Variable", "Statistic", "p-value"))
+```
+
+## Shapiro-Wilk Tests 2
+
+```{r, echo=FALSE}
+library(pander)
+panderOptions('table.style', 'rmarkdown')
+pander(completed_tests2, 
+       split.table = Inf,               
+       justify = c('left', 'center', 'center'),
+       col.names = c("Variable", "Statistic", "p-value"))
+```
+
+## Shapiro-Wilk Tests 3
+
+Shapiro-Wilk tests are used to test univariate normality
+
+Our Shapiro-Wilk tests conclude non-normality for all our variables (at 0.05 significance level)
+
+The chlorine ion measure (Cl.) gets the smallest p-value = $1.566\times10^{-10}$
+
+The calcium ion variable (Ca2.) gets the largest p-value = 0.02344
+
+## Multivariate Normal Tests
+
+Because we have variables that individually don't follow a normal distribution our joint distribution can not be multivariate normal
+
+In Tanaskovic et al., where data failed on the Shapiro-Wilk tests, a Box-Cox transformation was used
+
+If we do the same we won't be guaranteed a joint multivariate normal distribution but we can try
+
+## Histograms for Transformed Variables
+
+```{r, echo=FALSE}
+par(mfrow = c(3,4))
+hist(trhydroclean$T, breaks = 25, main = "Histogram of T")
+hist(trhydroclean$pH, breaks = 25, main = "Histogram of pH")
+hist(trhydroclean$EC, breaks = 25, main = "Histogram of EC")
+hist(trhydroclean$TS, breaks =25, main = "Histogram of TS")
+hist(trhydroclean$Ca2., breaks =25, main = "Histogram of Ca2+")
+hist(trhydroclean$Mg2., breaks =25, main = "Histogram of Mg2+")
+hist(trhydroclean$Na., breaks =25, main = "Histogram of Na+")
+hist(trhydroclean$K., breaks =25, main = "Histogram of K+")
+hist(trhydroclean$Cl., breaks =25, main = "Histogram of Cl-")
+hist(trhydroclean$SO4_2., breaks =25, main = "Histogram of SO4_2-")
+hist(trhydroclean$HCO3_., breaks =25, main = "Histogram of HCO3_-")
+hist(trhydroclean$SiO2, breaks =25, main = "Histogram of SiO2")
+```
+
+## Normal QQ-Plots for Transformed Variables
+
+```{r, echo=FALSE}
+par(mfrow = c(3,4))
+qqnorm(trhydroclean$T, main = "T")
+qqline(trhydroclean$T)
+qqnorm(trhydroclean$pH, main = "pH")
+qqline(trhydroclean$pH)
+qqnorm(trhydroclean$EC, main = "EC")
+qqline(trhydroclean$EC)
+qqnorm(trhydroclean$TS, main = "TS")
+qqline(trhydroclean$TS)
+qqnorm(trhydroclean$Ca2., main = "Ca2+")
+qqline(trhydroclean$Ca2.)
+qqnorm(trhydroclean$Mg2., main = "Mg2+")
+qqline(trhydroclean$Mg2.)
+qqnorm(trhydroclean$Na., main = "Na+")
+qqline(trhydroclean$Na.)
+qqnorm(trhydroclean$K., main = "K+")
+qqline(trhydroclean$K.)
+qqnorm(trhydroclean$Cl., main = "Cl+")
+qqline(trhydroclean$Cl.)
+qqnorm(trhydroclean$SO4_2., main = "SO4_2-")
+qqline(trhydroclean$SO4_2.)
+qqnorm(trhydroclean$HCO3_., main = "HCO3_-")
+qqline(trhydroclean$HCO3_.)
+qqnorm(trhydroclean$SiO2, main = "SiO2")
+qqline(trhydroclean$SiO2)
+```
+
+## Shapiro-Wilk Tests for Transformed Variables 1
+
+```{r, echo=FALSE}
+shapiros <- c(shapiro.test(trhydroclean$T),
+              shapiro.test(trhydroclean$pH),
+              shapiro.test(trhydroclean$EC),
+              shapiro.test(trhydroclean$TS),
+              shapiro.test(trhydroclean$Ca2.),
+              shapiro.test(trhydroclean$Mg2.),
+              shapiro.test(trhydroclean$Na.),
+              shapiro.test(trhydroclean$K.),
+              shapiro.test(trhydroclean$Cl.),
+              shapiro.test(trhydroclean$SO4_2.),
+              shapiro.test(trhydroclean$HCO3_.),
+              shapiro.test(trhydroclean$SiO2))
+
+completed_tests1 <- data.frame(
+  variable = c("T", "pH", "EC", "TS", "Ca2+", "Mg2+"),
+  statistic = c(0.98154, 0.94753, 0.97475, 0.97836, 0.96529, 0.9471),
+  p = as.numeric(c("0.865", "0.1451", "0.6753", "0.7804", "0.4196", 
+                   "0.1413")))
+
+completed_tests2 <- data.frame(
+  variable = c("Na+", "K+", "Cl+", "SO4_2-",
+               "HCO3_-", "SiO2"),
+  statistic = c(0.95737, 0.94157, 0.97362, 0.96966, 0.94129, 0.95221),
+  p = as.numeric(c("0.265", "0.1003", "0.6423", "0.5298", 
+                   "0.09856", "0.1937")))
+
+library(pander)
+
+panderOptions('table.style', 'rmarkdown')
+pander(completed_tests1, 
+       split.table = Inf,               
+       justify = c('left', 'center', 'center'),
+       col.names = c("Variable", "Statistic", "p-value"))
+```
+
+## Shapiro-Wilk Tests for Transformed Variables 2
+
+```{r}
+panderOptions('table.style', 'rmarkdown')
+pander(completed_tests2, 
+       split.table = Inf,               
+       justify = c('left', 'center', 'center'),
+       col.names = c("Variable", "Statistic", "p-value"))
+```
+
+## Transformed Variables
+
+This transformation has improved the look of our histograms and normal QQ-plots
+
+All of our p-values have increased to above our 0.05 significance level and so we fail to reject the null hypothesis and conclude that each of our transformed variables follow a normal distribution
+
+## Multivariate Normal Tests 2
+
+```{r, echo=FALSE}
+library(psych)
+mardia(trhydroclean, plot=FALSE)
+```
+
+Mardia's test has the null hypothesis the data follows a multivariate normal distribution and looks at two features of the data: skewness and kurtosis
+
+We get a p-value of 0.79 for skewness and 0.038 for kurtosis
+
+Because we reject for the kurtosis component we reject the null hypothesis of the test - even with transformed variables the data is not multivariate normal
+
+## Multivariate Normal Tests 3
+
+```{r}
+library(mvnTest)
+HZ.test(trhydroclean)
+```
+
+We can also do a Henze-Zirkler test with null hypothesis the data follows a multivariate normal distribution
+
+The p-value = 0.014 is smaller than the significance level 0.05 so we say the transformed data is not jointly multivariate normal.
