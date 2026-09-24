@@ -154,6 +154,12 @@ for (col_name in names(hydroclean)) {
 }
 ```
 
+## Summary Statistics
+
+```{r, echo=FALSE}
+summary(X)
+```
+
 ## Histograms
 
 ```{r, echo=FALSE}
@@ -245,6 +251,17 @@ library(pander)
 
 panderOptions('table.style', 'rmarkdown')
 pander(completed_tests1, 
+       split.table = Inf,               
+       justify = c('left', 'center', 'center'),
+       col.names = c("Variable", "Statistic", "p-value"))
+```
+
+## Shapiro-Wilk Tests 2
+
+```{r, echo=FALSE}
+library(pander)
+panderOptions('table.style', 'rmarkdown')
+pander(completed_tests2, 
        split.table = Inf,               
        justify = c('left', 'center', 'center'),
        col.names = c("Variable", "Statistic", "p-value"))
@@ -644,11 +661,120 @@ ggplot(scores_df, aes(x = PC1, y = PC2)) +
         legend.background = element_rect(color = "black", linewidth = 0.3))
 ```
 
-## Conclusions
+## Dendrogram 1
 
-With the missing
+```{r, echo=FALSE}
+#Hierachical Clustering 
+dist <- dist(X[ , c(4:8)] , diag=TRUE) 
+hc <- hclust(dist)
+```
 
-## References  {.smaller}
+```{r, echo=FALSE}
+#Dendrogram
+dhc <- as.dendrogram(hc)                        
+
+#Dendrogram colours
+i=0
+colLab<<-function(n){
+  if(is.leaf(n)){
+    a=attributes(n)
+    m=match(attributes(n)$label,data[,1])
+    
+    #Zone Colours
+    zone=data[m,16];
+    if(zone=="Pannonian Basin"){col_zone="blue"};
+    if(zone=="Vardar Zone"){col_zone="red"}; 
+    if(zone=="Serbo-Macedonian Massif"){col_zone="darkgreen"}; 
+    if(zone=="Carpatho-Balkans"){col_zone="purple"}
+    
+    #Structure Colours
+    structure=data[m,15];
+    if(structure=="Hydrogeological basin"){col_structure="lightblue"};
+    if(structure=="Karstic terrains"){col_structure="pink"};
+    if(structure=="Volcanogenic massifs"){col_structure="lightgreen"};
+    if(structure=="Metamorphic regions"){col_structure="plum"} 
+    
+    #Leaf attributes
+    attr(n,"nodePar")<-c(a$nodePar,list(cex=1.5,lab.cex=1,pch=20,col=col_structure,lab.col=col_zone,lab.font=1,lab.cex=1))
+  }
+  return(n)
+}
+
+dL <- dendrapply(dhc, colLab)
+
+#Plot
+plot(dL)
+
+#Legend for zones
+legend("topleft",
+       legend = c("Pannonian Basin" , "Vardar Zone" , "Serbo-Macedonian Massif" , "Carpatho-Balkans"), 
+       col = c("red", "blue" , "Darkgreen", "Purple"),
+       pch = c(4,4,4,4), bty = "n",  pt.cex = 1.5, cex = 0.8,
+       text.col = "black", horiz = FALSE,
+       inset= c(0,0))
+
+#Legend for structures      
+legend("left",
+       legend = c("Hydrogeological basin", "Karstic terrains", "Volcanogenic massifs", "Metamorphic regions"), 
+       col = c("lightblue","pink", "lightgreen", "plum"),
+       pch = c(20,20,20,20), bty = "n",  pt.cex = 1.5, cex = 0.8,
+       text.col = "black", horiz = FALSE,
+       inset= c(0,0))
+```
+
+## Dendrogram 2
+
+```{r, echo=FALSE}
+# Library
+library(tidyverse)
+library(dendextend)
+
+
+# Plot
+
+# Color in function of the cluster
+par(mar=c(1,1,1,7))
+dhc %>%
+  set("labels_col", value = c("red", "blue" , "Darkgreen", "Purple"), k=4) %>%
+  set("branches_k_color", value = c("red", "blue" , "Darkgreen", "Purple"), k = 4) %>%
+  plot(horiz=FALSE, axes=FALSE)
+```
+
+## Tanaskovic et al.'s Principal Component Analysis
+
+Their PCA reduced the variables to four latent factors which explained 74.2% of the sampling variance responsible for the data structure
+
+The first component explained 37.5% variance and was made up of variables that meant it could be conditionally named the “mineralisation or residence time” factor
+
+The second (the “hardness” component), third, and fourth principal components accounted for less variation: between 10.5% and 13.8%
+
+## Our Factor Analysis
+
+Tests for whether the specified factor model is sufficient to reproduce the observed correlation matrix gave us very small p-values for each model with one through four factors
+
+Our FA does not yield a model that is more parsimonious than Tanaskovic et al.'s PCA while also providing an adequate fit to our data
+
+So we can't improve the results of the paper with FA in terms of model parsimony
+
+## Factor Analysis Advantage
+
+Factor analysis does improve the interpretability of the underlying relationships between our variables
+
+We get clear groups and also are able to identify variables not significantly explained by the factors
+
+So the real answer is that we can not improve on Tanaskovic’s PCA but we can improve interpretability while retaining parsimony
+
+## Dendrograms
+
+The green and purple groups have a higher merge point, suggesting they are more dissimilar
+
+The red and blue groups on the other hand have a lower merge point, meaning they are more similar to each other than the green and purple group
+
+The final merge is a big jump from the two main branches which suggests the two branches identified before this are very dissimilar
+
+The groups identified by the dendrogram are fairly consistent with the changes in linkage and distance
+
+## References {.smaller}
 
 - Chalise, Baburam, Prem Paudyal, Buddha Bahadur Kunwar, Kiran Bishwakarma, Bina Thapa, Ramesh Raj Pant, and Bhanu Bhakta Neupane. 2023. “Water Quality and Hydrochemical Assessments of Thermal Springs, Gandaki Province, Nepal.” Heliyon 9 (6). https://doi.org/10.1016/j.heliyon.2023.e17353.
 
