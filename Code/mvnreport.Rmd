@@ -205,8 +205,8 @@ shapiro.test(trhydroclean$Mg2.)
 shapiro.test(trhydroclean$Na.)
 shapiro.test(trhydroclean$K.)
 shapiro.test(trhydroclean$Cl.)
-shapiro.test(trhydroclean$SO2.4)
-shapiro.test(trhydroclean$HCO.3)
+shapiro.test(trhydroclean$SO4_2.)
+shapiro.test(trhydroclean$HCO3_.)
 shapiro.test(trhydroclean$SiO2)
 ```
 This transformation has definitely improved the look of our histograms and QQ-plots. The right skewness of the histograms have been improved and they look much more symmetric. The QQ-plots also follow the line better now too. Our Shapiro-Wilks test confirm our transformation. All of our p-values have increased to above our 0.05 significance level and so we fail to reject the null hypothesis and conclude that each of our transformed variables follow a normal distribution.
